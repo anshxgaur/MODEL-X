@@ -2,9 +2,10 @@
  * RunAnywhere SDK initialization and model catalog.
  *
  * This module:
- * 1. Initializes the SDK (loads WASM, registers backends)
- * 2. Registers the model catalog (LLM, VLM, STT, TTS, VAD)
- * 3. Wires up the VLM Web Worker
+ * 1. Initializes the SDK (core TypeScript infrastructure)
+ * 2. Registers backends (LlamaCpp for LLM/VLM, ONNX for STT/TTS/VAD)
+ * 3. Registers the model catalog
+ * 4. Wires up the VLM Web Worker
  *
  * Import this module once at app startup.
  */
@@ -12,33 +13,25 @@
 import {
   RunAnywhere,
   SDKEnvironment,
-  VLMWorkerBridge,
-  SherpaONNXBridge,
+  EventBus,
   ModelManager,
   ModelCategory,
   LLMFramework,
   type CompactModelDef,
-  type AccelerationMode,
 } from '@runanywhere/web';
+
+import {
+  LlamaCPP,
+  VLMWorkerBridge,
+} from '@runanywhere/web-llamacpp';
+
+import { ONNX } from '@runanywhere/web-onnx';
+
+import type { AccelerationMode } from '@runanywhere/web';
 
 // Vite bundles the worker as a standalone JS chunk and returns its URL.
 // @ts-ignore — Vite-specific ?worker&url query
 import vlmWorkerUrl from './workers/vlm-worker?worker&url';
-
-// Resolve WASM glue scripts from the npm package so Vite's dev server
-// and the production build both find the right files.
-const wasmCpuUrl = new URL(
-  '@runanywhere/web/wasm/racommons.js',
-  import.meta.url,
-).href;
-const wasmGpuUrl = new URL(
-  '@runanywhere/web/wasm/racommons-webgpu.js',
-  import.meta.url,
-).href;
-const sherpaGlueUrl = new URL(
-  '@runanywhere/web/wasm/sherpa/sherpa-onnx-glue.js',
-  import.meta.url,
-).href;
 
 // ---------------------------------------------------------------------------
 // Model catalog
@@ -102,28 +95,32 @@ const MODELS: CompactModelDef[] = [
 // ---------------------------------------------------------------------------
 
 let _initPromise: Promise<void> | null = null;
+let _accelerationMode: AccelerationMode | null = null;
 
 /** Initialize the RunAnywhere SDK. Safe to call multiple times. */
 export async function initSDK(): Promise<void> {
   if (_initPromise) return _initPromise;
 
   _initPromise = (async () => {
-    await RunAnywhere.initialize(
-      {
-        environment: SDKEnvironment.Development,
-        debug: true,
-        webgpuWasmUrl: wasmGpuUrl,
-      },
-      wasmCpuUrl,
-    );
+    // Step 1: Initialize core SDK (pure TypeScript — no WASM)
+    await RunAnywhere.initialize({
+      environment: SDKEnvironment.Development,
+      debug: true,
+    });
 
-    // Register model catalog
+    // Listen for acceleration mode from LlamaCpp backend
+    EventBus.shared.on('llamacpp.wasmLoaded', (evt) => {
+      _accelerationMode = (evt.accelerationMode as AccelerationMode) ?? 'cpu';
+    });
+
+    // Step 2: Register backends (each loads its own WASM automatically)
+    await LlamaCPP.register();
+    await ONNX.register();
+
+    // Step 3: Register model catalog
     RunAnywhere.registerModels(MODELS);
 
-    // Set Sherpa-ONNX WASM URL so STT/TTS/VAD can load
-    SherpaONNXBridge.shared.wasmUrl = sherpaGlueUrl;
-
-    // Wire up VLM worker
+    // Step 4: Wire up VLM worker
     VLMWorkerBridge.shared.workerUrl = vlmWorkerUrl;
     RunAnywhere.setVLMLoader({
       get isInitialized() { return VLMWorkerBridge.shared.isInitialized; },
@@ -138,8 +135,8 @@ export async function initSDK(): Promise<void> {
 
 /** Get acceleration mode after init. */
 export function getAccelerationMode(): AccelerationMode | null {
-  return RunAnywhere.isInitialized ? RunAnywhere.accelerationMode : null;
+  return _accelerationMode;
 }
 
 // Re-export for convenience
-export { RunAnywhere, ModelManager, ModelCategory, VLMWorkerBridge };
+export { RunAnywhere, ModelManager, ModelCategory, VLMWorkerBridge, LlamaCPP };

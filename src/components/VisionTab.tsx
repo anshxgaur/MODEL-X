@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { VideoCapture, VLMWorkerBridge, ModelCategory } from '@runanywhere/web';
+import { ModelCategory } from '@runanywhere/web';
+import { VideoCapture, VLMWorkerBridge } from '@runanywhere/web-llamacpp';
 import { useModelLoader } from '../hooks/useModelLoader';
 import { ModelBanner } from './ModelBanner';
 
