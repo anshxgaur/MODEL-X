@@ -41,6 +41,16 @@ const MODELS: CompactModelDef[] = [
     modality: ModelCategory.Language,
     memoryRequirement: 250_000_000,
   },
+  // LLM — Liquid AI LFM2 1.2B Tool (optimized for tool calling & function calling)
+  {
+    id: 'lfm2-1.2b-tool-q4_k_m',
+    name: 'LFM2 1.2B Tool Q4_K_M',
+    repo: 'LiquidAI/LFM2-1.2B-Tool-GGUF',
+    files: ['LFM2-1.2B-Tool-Q4_K_M.gguf'],
+    framework: LLMFramework.LlamaCpp,
+    modality: ModelCategory.Language,
+    memoryRequirement: 800_000_000,
+  },
   // VLM — Liquid AI LFM2-VL 450M (vision + language)
   {
     id: 'lfm2-vl-450m-q4_0',
