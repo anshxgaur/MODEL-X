@@ -1,6 +1,6 @@
+import { NovaInterface } from './components/NovaInterface';
 import { useState, useEffect } from 'react';
-import { initSDK, getAccelerationMode } from './runanywhere';
-import { ChatTab } from './components/ChatTab';
+import { getAccelerationMode } from './runanywhere';
 import { VisionTab } from './components/VisionTab';
 import { VoiceTab } from './components/VoiceTab';
 import { ToolsTab } from './components/ToolsTab';
@@ -8,65 +8,49 @@ import { ToolsTab } from './components/ToolsTab';
 type Tab = 'chat' | 'vision' | 'voice' | 'tools';
 
 export function App() {
-  const [sdkReady, setSdkReady] = useState(false);
-  const [sdkError, setSdkError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
+  const [accel, setAccel] = useState<string | null>(null);
 
   useEffect(() => {
-    initSDK()
-      .then(() => setSdkReady(true))
-      .catch((err) => setSdkError(err instanceof Error ? err.message : String(err)));
+    // Only init SDK lazily if Vision/Voice tabs are needed
+    // Don't block the UI on startup anymore
+    try {
+      const mode = getAccelerationMode();
+      setAccel(mode);
+    } catch {
+      // SDK not init yet — that's fine
+    }
   }, []);
 
-  if (sdkError) {
-    return (
-      <div className="app-loading">
-        <h2>SDK Error</h2>
-        <p className="error-text">{sdkError}</p>
-      </div>
-    );
-  }
-
-  if (!sdkReady) {
-    return (
-      <div className="app-loading">
-        <div className="spinner" />
-        <h2>Loading RunAnywhere SDK...</h2>
-        <p>Initializing on-device AI engine</p>
-      </div>
-    );
-  }
-
-  const accel = getAccelerationMode();
-
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>RunAnywhere AI</h1>
-        {accel && <span className="badge">{accel === 'webgpu' ? 'WebGPU' : 'CPU'}</span>}
-      </header>
+    <>
+      {/* 🔥 Your main futuristic UI — loads instantly now */}
+      <NovaInterface />
 
-      <nav className="tab-bar">
-        <button className={activeTab === 'chat' ? 'active' : ''} onClick={() => setActiveTab('chat')}>
-          💬 Chat
-        </button>
-        <button className={activeTab === 'vision' ? 'active' : ''} onClick={() => setActiveTab('vision')}>
-          📷 Vision
-        </button>
-        <button className={activeTab === 'voice' ? 'active' : ''} onClick={() => setActiveTab('voice')}>
-          🎙️ Voice
-        </button>
-        <button className={activeTab === 'tools' ? 'active' : ''} onClick={() => setActiveTab('tools')}>
-          🔧 Tools
-        </button>
-      </nav>
+      {/* 🔒 Hidden debug panel */}
+      <div className="app" style={{ display: 'none' }}>
+        <header className="app-header">
+          <h1>NOVA AI</h1>
+          {accel && (
+            <span className="badge">
+              {accel === 'webgpu' ? 'WebGPU 🚀' : 'CPU 🛡️'}
+            </span>
+          )}
+        </header>
 
-      <main className="tab-content">
-        {activeTab === 'chat' && <ChatTab />}
-        {activeTab === 'vision' && <VisionTab />}
-        {activeTab === 'voice' && <VoiceTab />}
-        {activeTab === 'tools' && <ToolsTab />}
-      </main>
-    </div>
+        <nav className="tab-bar">
+          <button className={activeTab === 'chat' ? 'active' : ''} onClick={() => setActiveTab('chat')}>💬 Chat</button>
+          <button className={activeTab === 'vision' ? 'active' : ''} onClick={() => setActiveTab('vision')}>📷 Vision</button>
+          <button className={activeTab === 'voice' ? 'active' : ''} onClick={() => setActiveTab('voice')}>🎙️ Voice</button>
+          <button className={activeTab === 'tools' ? 'active' : ''} onClick={() => setActiveTab('tools')}>🔧 Tools</button>
+        </nav>
+
+        <main className="tab-content">
+          {activeTab === 'vision' && <VisionTab />}
+          {activeTab === 'voice' && <VoiceTab />}
+          {activeTab === 'tools' && <ToolsTab />}
+        </main>
+      </div>
+    </>
   );
 }

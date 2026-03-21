@@ -1,24 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ModelCategory } from '@runanywhere/web';
-import { TextGeneration } from '@runanywhere/web-llamacpp';
-import { useModelLoader } from '../hooks/useModelLoader';
-import { ModelBanner } from './ModelBanner';
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   text: string;
-  stats?: { tokens: number; tokPerSec: number; latencyMs: number };
 }
 
 export function ChatTab() {
-  const loader = useModelLoader(ModelCategory.Language);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
-  const cancelRef = useRef<(() => void) | null>(null);
+  const cancelRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
@@ -27,109 +21,115 @@ export function ChatTab() {
     const text = input.trim();
     if (!text || generating) return;
 
-    // Ensure model is loaded
-    if (loader.state !== 'ready') {
-      const ok = await loader.ensure();
-      if (!ok) return;
-    }
-
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', text }]);
     setGenerating(true);
+    setInput('');
 
-    // Add empty assistant message for streaming
-    const assistantIdx = messages.length + 1;
-    setMessages((prev) => [...prev, { role: 'assistant', text: '' }]);
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
+    const assistantId = crypto.randomUUID();
+    const assistantMsg: Message = { id: assistantId, role: 'assistant', text: '' };
+
+    setMessages(prev => [...prev, userMsg, assistantMsg]);
+
+    const controller = new AbortController();
+    cancelRef.current = controller;
 
     try {
-      const { stream, result: resultPromise, cancel } = await TextGeneration.generateStream(text, {
-        maxTokens: 512,
-        temperature: 0.7,
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1024,
+          stream: true,
+          system: `You are NOVA, an advanced AI assistant with a sleek, futuristic personality. 
+                   Be helpful, concise, and slightly futuristic in tone.`,
+          messages: [
+            // include full history for context
+            ...messages.map(m => ({ role: m.role, content: m.text })),
+            { role: 'user', content: text }
+          ],
+        }),
       });
-      cancelRef.current = cancel;
 
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
       let accumulated = '';
-      for await (const token of stream) {
-        accumulated += token;
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[assistantIdx] = { role: 'assistant', text: accumulated };
-          return updated;
-        });
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+
+        for (const line of lines) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.delta?.text;
+            if (delta) {
+              accumulated += delta;
+              setMessages(prev =>
+                prev.map(m => m.id === assistantId ? { ...m, text: accumulated } : m)
+              );
+            }
+          } catch {}
+        }
       }
 
-      const result = await resultPromise;
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[assistantIdx] = {
-          role: 'assistant',
-          text: result.text || accumulated,
-          stats: {
-            tokens: result.tokensUsed,
-            tokPerSec: result.tokensPerSecond,
-            latencyMs: result.latencyMs,
-          },
-        };
-        return updated;
-      });
     } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
       const msg = err instanceof Error ? err.message : String(err);
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[assistantIdx] = { role: 'assistant', text: `Error: ${msg}` };
-        return updated;
-      });
+      setMessages(prev =>
+        prev.map(m => m.id === assistantId ? { ...m, text: `Error: ${msg}` } : m)
+      );
     } finally {
       cancelRef.current = null;
       setGenerating(false);
     }
-  }, [input, generating, messages.length, loader]);
+  }, [input, generating, messages]);
 
   const handleCancel = () => {
-    cancelRef.current?.();
+    cancelRef.current?.abort();
+    setGenerating(false);
   };
 
   return (
     <div className="tab-panel chat-panel">
-      <ModelBanner
-        state={loader.state}
-        progress={loader.progress}
-        error={loader.error}
-        onLoad={loader.ensure}
-        label="LLM"
-      />
-
       <div className="message-list" ref={listRef}>
         {messages.length === 0 && (
           <div className="empty-state">
             <h3>Start a conversation</h3>
-            <p>Type a message below to chat with on-device AI</p>
+            <p>Type a message below to chat with NOVA</p>
           </div>
         )}
-        {messages.map((msg, i) => (
-          <div key={i} className={`message message-${msg.role}`}>
+        {messages.map((msg) => (
+          <div key={msg.id} className={`message message-${msg.role}`}>
             <div className="message-bubble">
               <p>{msg.text || '...'}</p>
-              {msg.stats && (
-                <div className="message-stats">
-                  {msg.stats.tokens} tokens · {msg.stats.tokPerSec.toFixed(1)} tok/s · {msg.stats.latencyMs.toFixed(0)}ms
-                </div>
-              )}
             </div>
           </div>
         ))}
       </div>
 
-      <form
-        className="chat-input"
-        onSubmit={(e) => { e.preventDefault(); send(); }}
-      >
+      <form className="chat-input" onSubmit={(e) => { e.preventDefault(); send(); }}>
         <input
           type="text"
-          placeholder="Message..."
+          placeholder="Message NOVA..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={generating}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } }}
         />
         {generating ? (
           <button type="button" className="btn" onClick={handleCancel}>Stop</button>
