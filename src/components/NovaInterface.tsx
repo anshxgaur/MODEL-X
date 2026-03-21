@@ -11,12 +11,19 @@ export function NovaInterface() {
   const [date, setDate] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', text: 'SYSTEM: NOVA core online. Ready.' }
+    { role: 'assistant', text: 'SYSTEM: NOVA core online. Voice & Chat ready.' }
   ]);
   const [generating, setGenerating] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [waitingForVideo, setWaitingForVideo] = useState(false);
+
   const cancelRef = useRef<AbortController | null>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
+  const waitingForVideoRef = useRef(false);
+  const listeningRef = useRef(false);
 
+  // ── Clock ──
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
@@ -28,17 +35,60 @@ export function NovaInterface() {
     return () => clearInterval(timer);
   }, []);
 
+  // ── Auto scroll ──
   useEffect(() => {
     if (rightPanelRef.current) {
       rightPanelRef.current.scrollTop = rightPanelRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleCommand = useCallback(async () => {
-    const text = inputValue.trim();
-    if (!text || generating) return;
+  // ── Speak Response (Neerja - Indian Neural Voice) ──
+  const speakText = useCallback((text: string) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
 
-    setInputValue('');
+    const trySpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1;
+
+      // Neerja first, then fallbacks
+      const preferred =
+        voices.find(v => v.name.includes('Neerja')) ||
+        voices.find(v => v.name.includes('Online') && v.lang === 'en-IN') ||
+        voices.find(v => v.lang === 'en-IN') ||
+        voices.find(v => v.name.includes('Online') && v.lang.startsWith('en'));
+
+      if (preferred) {
+        utterance.voice = preferred;
+        utterance.lang = preferred.lang;
+        console.log('[NOVA Voice Selected]', preferred.name, preferred.lang);
+      } else {
+        utterance.lang = 'en-IN';
+        console.log('[NOVA Voice] Using default voice');
+      }
+
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        trySpeak();
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+    } else {
+      trySpeak();
+    }
+  }, []);
+
+  // ── Send to Groq ──
+  const sendToGroq = useCallback(async (text: string) => {
     setGenerating(true);
 
     const userMsg: Message = { role: 'user', text };
@@ -102,6 +152,8 @@ export function NovaInterface() {
         }
       }
 
+      speakText(accumulated);
+
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       const msg = err instanceof Error ? err.message : String(err);
@@ -114,10 +166,229 @@ export function NovaInterface() {
       cancelRef.current = null;
       setGenerating(false);
     }
-  }, [inputValue, generating, messages]);
+  }, [messages, speakText]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleCommand();
+  // ── Process Voice Command ──
+  const processVoiceCommand = useCallback(async (transcript: string) => {
+    const lower = transcript.toLowerCase();
+
+    if (waitingForVideoRef.current) {
+      waitingForVideoRef.current = false;
+      setWaitingForVideo(false);
+      const searchQuery = encodeURIComponent(transcript);
+      window.open(`https://www.youtube.com/results?search_query=${searchQuery}`, '_blank');
+      const msg = `Searching YouTube for "${transcript}"`;
+      setMessages(prev => [...prev,
+        { role: 'user', text: transcript },
+        { role: 'assistant', text: `⚡ SYSTEM: ${msg}` }
+      ]);
+      speakText(msg);
+      return;
+    }
+
+    if (lower.includes('open youtube')) {
+      window.open('https://youtube.com', '_blank');
+      const msg = 'Opening YouTube now.';
+      setMessages(prev => [...prev,
+        { role: 'user', text: transcript },
+        { role: 'assistant', text: `⚡ SYSTEM: ${msg}` }
+      ]);
+      speakText(msg);
+      return;
+    }
+
+    if (
+      lower.includes('play youtube') ||
+      lower.includes('play on youtube') ||
+      lower.includes('search youtube') ||
+      lower.includes('play a song') ||
+      lower.includes('play music')
+    ) {
+      const askMsg = 'Sure! What video or song would you like to play?';
+      setMessages(prev => [...prev,
+        { role: 'user', text: transcript },
+        { role: 'assistant', text: `⚡ SYSTEM: ${askMsg}` }
+      ]);
+      speakText(askMsg);
+      waitingForVideoRef.current = true;
+      setWaitingForVideo(true);
+      return;
+    }
+
+    if (lower.includes('open google')) {
+      window.open('https://google.com', '_blank');
+      const msg = 'Opening Google now.';
+      setMessages(prev => [...prev,
+        { role: 'user', text: transcript },
+        { role: 'assistant', text: `⚡ SYSTEM: ${msg}` }
+      ]);
+      speakText(msg);
+      return;
+    }
+
+    if (lower.includes('open github')) {
+      window.open('https://github.com', '_blank');
+      const msg = 'Opening GitHub now.';
+      setMessages(prev => [...prev,
+        { role: 'user', text: transcript },
+        { role: 'assistant', text: `⚡ SYSTEM: ${msg}` }
+      ]);
+      speakText(msg);
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: transcript }),
+      });
+      const data = await res.json();
+      if (data.status !== 'not_a_command') {
+        const systemMsg = data.speak || data.status;
+        setMessages(prev => [...prev,
+          { role: 'user', text: transcript },
+          { role: 'assistant', text: `⚡ SYSTEM: ${systemMsg}` }
+        ]);
+        speakText(systemMsg);
+        return;
+      }
+    } catch {
+      // Flask not running — skip
+    }
+
+    await sendToGroq(transcript);
+  }, [sendToGroq, speakText]);
+
+  // ── Create fresh recognition instance ──
+  const createRecognition = useCallback(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-IN';
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('[NOVA Voice]', transcript);
+      listeningRef.current = false;
+      setListening(false);
+      processVoiceCommand(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech') return;
+      if (event.error === 'aborted') return;
+      console.error('[Voice Error]', event.error);
+      listeningRef.current = false;
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      listeningRef.current = false;
+      setListening(false);
+    };
+
+    return recognition;
+  }, [processVoiceCommand]);
+
+  // ── Mic Toggle ──
+  const toggleListening = useCallback(() => {
+    if (listeningRef.current) {
+      listeningRef.current = false;
+      setListening(false);
+      try {
+        if ((window as any)._novaRecognition) {
+          (window as any)._novaRecognition.stop();
+        }
+      } catch {}
+    } else {
+      window.speechSynthesis.cancel();
+      const recognition = createRecognition();
+      if (!recognition) return;
+
+      (window as any)._novaRecognition = recognition;
+      listeningRef.current = true;
+      setListening(true);
+
+      try {
+        recognition.start();
+      } catch (e) {
+        console.error('[Mic Error]', e);
+        listeningRef.current = false;
+        setListening(false);
+      }
+    }
+  }, [createRecognition]);
+
+  // ── Handle Text Command ──
+  const handleCommand = useCallback(async () => {
+    const text = inputValue.trim();
+    if (!text || generating) return;
+    setInputValue('');
+
+    const lower = text.toLowerCase();
+
+    if (lower.includes('open youtube')) {
+      window.open('https://youtube.com', '_blank');
+      setMessages(prev => [...prev,
+        { role: 'user', text },
+        { role: 'assistant', text: '⚡ SYSTEM: Opening YouTube now.' }
+      ]);
+      return;
+    }
+
+    if (lower.includes('play youtube') || lower.includes('play on youtube') || lower.includes('play music')) {
+      const askMsg = 'Sure! What video or song would you like to play?';
+      setMessages(prev => [...prev,
+        { role: 'user', text },
+        { role: 'assistant', text: `⚡ SYSTEM: ${askMsg}` }
+      ]);
+      waitingForVideoRef.current = true;
+      setWaitingForVideo(true);
+      return;
+    }
+
+    if (waitingForVideoRef.current) {
+      waitingForVideoRef.current = false;
+      setWaitingForVideo(false);
+      const searchQuery = encodeURIComponent(text);
+      window.open(`https://www.youtube.com/results?search_query=${searchQuery}`, '_blank');
+      setMessages(prev => [...prev,
+        { role: 'user', text },
+        { role: 'assistant', text: `⚡ SYSTEM: Searching YouTube for "${text}"` }
+      ]);
+      return;
+    }
+
+    await sendToGroq(text);
+  }, [inputValue, generating, sendToGroq]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleCommand();
+    }
+  };
+
+  const getStatus = () => {
+    if (listening) return '🎙️ LISTENING...';
+    if (speaking) return '🔊 SPEAKING...';
+    if (generating) return 'PROCESSING...';
+    if (waitingForVideo) return '🎵 WAITING FOR SONG...';
+    return 'SECURE LINK: ACTIVE';
+  };
+
+  const getStatusColor = () => {
+    if (listening) return '#ff3cac';
+    if (speaking) return '#00ff88';
+    if (generating) return '#ffaa00';
+    if (waitingForVideo) return '#ff6b35';
+    return '#00eaff';
   };
 
   return (
@@ -139,41 +410,71 @@ export function NovaInterface() {
 
       <div className="top-center">{time}</div>
       <div className="date-display">{date}</div>
-      <div className="top-right" style={{ color: '#00eaff' }}>
-        {generating ? 'PROCESSING...' : 'SECURE LINK: ACTIVE'}
+      <div className="top-right" style={{ color: getStatusColor() }}>
+        {getStatus()}
       </div>
 
       <div className="orb-ring"></div>
-      <div className="glow-circle"></div>
 
-      <div className="right-panel" ref={rightPanelRef}>
+      <div className="glow-circle" style={{
+        boxShadow: listening
+          ? '0 0 60px rgba(255,60,172,0.9), 0 0 100px rgba(255,60,172,0.5)'
+          : speaking
+          ? '0 0 60px rgba(0,255,136,0.9), 0 0 100px rgba(0,255,136,0.5)'
+          : waitingForVideo
+          ? '0 0 60px rgba(255,107,53,0.9), 0 0 100px rgba(255,107,53,0.5)'
+          : '0 0 50px rgba(0,234,255,0.8), 0 0 80px rgba(0,234,255,0.4)'
+      }}></div>
+
+      <div
+        className={`right-panel ${listening ? 'listening' : speaking ? 'speaking' : ''}`}
+        ref={rightPanelRef}
+      >
         <h3>SYSTEM LOG</h3>
         {messages.map((msg, idx) => (
-          <div key={idx} className={msg.role === 'user' ? 'user-message' : 'ai-message'}>
+          <div key={idx} className={
+            msg.role === 'user' ? 'user-message' :
+            msg.text.startsWith('⚡') ? 'system-message' : 'ai-message'
+          }>
             {msg.role === 'user' ? `> USER: ${msg.text}` : msg.text}
           </div>
         ))}
       </div>
 
       <div className="audio-bars">
-        <div className="bar"></div>
-        <div className="bar"></div>
-        <div className="bar"></div>
-        <div className="bar"></div>
-        <div className="bar"></div>
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="bar" style={{
+            animationPlayState: listening || speaking ? 'running' : 'paused',
+            background: listening ? '#ff3cac' : speaking ? '#00ff88' : '#00eaff'
+          }}></div>
+        ))}
       </div>
 
       <div className="command-center">
-        <input
-          type="text"
-          className="command-input"
-          placeholder={generating ? "PROCESSING..." : "ENTER COMMAND..."}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={generating}
-          autoFocus
-        />
+        <div className="input-row">
+          <textarea
+            className="command-input"
+            placeholder={
+              listening ? "🎙️ LISTENING..." :
+              waitingForVideo ? "🎵 SAY THE SONG NAME..." :
+              generating ? "PROCESSING..." :
+              "ENTER COMMAND..."
+            }
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={generating || listening}
+            autoFocus
+            rows={1}
+          />
+          <button
+            className={`mic-btn ${listening ? 'mic-active' : ''}`}
+            onClick={toggleListening}
+            title={listening ? "Click to stop" : "Click to speak"}
+          >
+            {listening ? '🔴' : '🎙️'}
+          </button>
+        </div>
       </div>
     </div>
   );

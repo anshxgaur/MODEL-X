@@ -1,10 +1,32 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+build/
 .vite/
-*.local
-*.tsbuildinfo
-.playwright-mcp/
-*.png
+
+# Environment & API Keys
 .env
+.env.local
+
+# Python
 venv/
 src/venv/
+__pycache__/
+
+# TypeScript
+*.tsbuildinfo
+
+# Playwright
+.playwright-mcp/
+
+# Images
+*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vite
+*.local

@@ -9,7 +9,7 @@
   overflow: hidden;
   color: #00eaff;
   font-family: 'Orbitron', sans-serif;
-  z-index: 50; /* Keep it on top of the starter kit */
+  z-index: 50;
 }
 
 /* --- Top Bar Elements --- */
@@ -64,16 +64,17 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   animation: breathe 4s ease-in-out infinite;
+  transition: box-shadow 0.3s ease;
 }
 @keyframes breathe {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
   50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
 }
 
-/* --- Bottom Command Center --- */
+/* --- Audio Bars --- */
 .audio-bars {
   position: absolute;
-  bottom: 120px;
+  bottom: 100px;
   display: flex;
   gap: 6px;
   left: 50%;
@@ -81,7 +82,8 @@
   z-index: 10;
 }
 .bar {
-  width: 6px; height: 20px;
+  width: 6px;
+  height: 20px;
   background: #00eaff;
   animation: pulse 1s infinite alternate;
 }
@@ -94,38 +96,110 @@
   100% { height: 40px; opacity: 1; }
 }
 
+/* --- Command Center --- */
 .command-center {
   position: absolute;
-  bottom: 50px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
-  text-align: center;
+  width: 460px;
 }
+
+/* --- Input Row with Mic --- */
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
 .command-input {
-  width: 350px;
-  padding: 12px;
+  flex: 1;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 12px 16px;
   border: 1px solid #00eaff;
   background: rgba(0,0,0,0.7);
   color: #00eaff;
   font-family: 'Orbitron', sans-serif;
   outline: none;
-  text-align: center;
+  text-align: left;
   box-shadow: 0 0 15px #00eaff66;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.5;
+  box-sizing: border-box;
+  field-sizing: content;
 }
 
-/* --- NEW: Right Side AI Response Panel --- */
+.command-input:focus {
+  box-shadow: 0 0 25px #00eaff99;
+  border-color: #00eaff;
+}
+
+.command-input::placeholder {
+  color: #00eaff66;
+}
+
+.command-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Mic Button --- */
+.mic-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #00eaff;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px #00eaff44;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mic-btn:hover {
+  background: rgba(0, 234, 255, 0.15);
+  box-shadow: 0 0 20px #00eaff88;
+  transform: scale(1.05);
+}
+
+.mic-btn.mic-active {
+  border-color: #ff3cac;
+  background: rgba(255, 60, 172, 0.2);
+  box-shadow: 0 0 20px rgba(255, 60, 172, 0.6),
+              0 0 40px rgba(255, 60, 172, 0.3);
+  animation: micPulse 0.5s infinite alternate;
+}
+
+@keyframes micPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+/* --- Right Panel --- */
 .right-panel {
   position: absolute;
   right: 30px;
-  top: 100px;
-  width: 380px;
-  height: calc(100vh - 200px);
+  top: 80px;
+  width: 420px;
+  height: calc(100vh - 160px);
   background: rgba(0, 10, 20, 0.6);
   border: 1px solid #00eaff;
   border-radius: 8px;
-  box-shadow: 0 0 20px rgba(0, 234, 255, 0.2), inset 0 0 15px rgba(0, 234, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 234, 255, 0.2),
+              inset 0 0 15px rgba(0, 234, 255, 0.1);
   padding: 20px;
   overflow-y: auto;
   z-index: 10;
@@ -134,6 +208,7 @@
   flex-direction: column;
   gap: 15px;
 }
+
 .right-panel h3 {
   margin: 0 0 10px 0;
   color: #00ff88;
@@ -142,14 +217,18 @@
   letter-spacing: 2px;
   border-bottom: 1px solid #00eaff44;
   padding-bottom: 5px;
+  flex-shrink: 0;
 }
+
 .ai-message {
   color: #00eaff;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
   text-shadow: 0 0 2px #00eaff44;
   white-space: pre-wrap;
+  word-break: break-word;
 }
+
 .user-message {
   color: #aaaaaa;
   font-size: 0.85rem;
@@ -157,7 +236,30 @@
   margin-bottom: -5px;
 }
 
-/* Custom Scrollbar for Right Panel */
+/* --- System Message (voice commands) --- */
+.system-message {
+  color: #00ff88;
+  font-size: 0.85rem;
+  border-left: 2px solid #00ff88;
+  padding-left: 10px;
+  opacity: 0.9;
+}
+
+/* --- Custom Scrollbar --- */
 .right-panel::-webkit-scrollbar { width: 6px; }
 .right-panel::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
 .right-panel::-webkit-scrollbar-thumb { background: #00eaff; border-radius: 3px; }
+
+/* --- Listening state border on panel --- */
+.right-panel.listening {
+  border-color: #ff3cac;
+  box-shadow: 0 0 20px rgba(255, 60, 172, 0.3),
+              inset 0 0 15px rgba(255, 60, 172, 0.1);
+}
+
+/* --- Speaking state border on panel --- */
+.right-panel.speaking {
+  border-color: #00ff88;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3),
+              inset 0 0 15px rgba(0, 255, 136, 0.1);
+}
