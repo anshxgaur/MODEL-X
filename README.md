@@ -1,130 +1,142 @@
-# RunAnywhere Web Starter App
+# NOVA Interface v2.0 — AI Assistant
+<p align="center">
+  <b>Ansh Gaur</b><br>
+  <i>A futuristic AI assistant powered by Groq's ultra-fast LPU inference</i>
+</p>
 
-A minimal React + TypeScript starter app demonstrating **on-device AI in the browser** using the [`@runanywhere/web`](https://www.npmjs.com/package/@runanywhere/web) SDK. All inference runs locally via WebAssembly — no server, no API key, 100% private.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-TypeScript-blue?style=for-the-badge&logo=react"/>
+  <img src="https://img.shields.io/badge/AI-Groq_LPU-orange?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Model-Llama_3.3_70B-purple?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Status-Active_Development-green?style=for-the-badge"/>
+</p>
 
-## Features
+---
 
-| Tab | What it does |
-|-----|-------------|
-| **Chat** | Stream text from an on-device LLM (LFM2 350M) |
-| **Vision** | Point your camera and describe what the VLM sees (LFM2-VL 450M) |
-| **Voice** | Speak naturally — VAD detects speech, STT transcribes, LLM responds, TTS speaks back |
+## ⚡ What is NOVA?
 
-## Quick Start
+NOVA is a sleek, futuristic AI assistant interface built with React + TypeScript, powered by **Groq's LPU (Language Processing Unit)** for lightning-fast responses. It features a stunning cyber-aesthetic UI with a glowing orb, real-time system log, and a smart auto-expanding input.
+
+---
+
+## 🔥 Features
+
+| Feature | Description |
+|---------|-------------|
+| **⚡ Ultra-Fast AI** | Powered by Groq LPU — 750+ tokens/sec |
+| **🌐 Multilingual** | Speaks Hindi, French, English and more |
+| **🎨 Cyber UI** | Glowing orb, animated bars, futuristic theme |
+| **📜 System Log** | Real-time scrollable conversation panel |
+| **📝 Smart Input** | Auto-expanding textarea like ChatGPT |
+| **🔒 Secure** | API key stored in `.env`, never exposed |
+
+---
+
+## 🏗️ Project Structure
+```
+MODEL-X/
+├── src/
+│   ├── components/
+│   │   ├── NovaInterface.tsx   # Main futuristic UI
+│   │   ├── ChatTab.tsx         # Chat component
+│   │   ├── VisionTab.tsx       # Camera + VLM
+│   │   └── VoiceTab.tsx        # Voice pipeline
+│   ├── styles/
+│   │   └── NovaTheme.css       # Cyber aesthetic CSS
+│   ├── App.tsx                 # App root
+│   └── main.tsx                # React entry point
+├── app.py                      # Flask backend (Groq API)
+├── .env                        # API keys (never commit!)
+├── .gitignore                  # Protects .env from GitHub
+└── package.json
+```
+
+---
+
+## 🔥 PROJECTS
+
+<p align="center">
+  <b>Ansh Gaur</b><br>
+  <i>Showcasing specialized work in AI, Healthcare Intelligence & Voice Automation</i>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python"/>
+  <img src="https://img.shields.io/badge/Focus-AI_&_Automation-teal?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Status-Active_Development-green?style=for-the-badge"/>
+</p>
+
+---
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+## 🤖 MODEL-X (NOVA)
+<img src="https://img.shields.io/badge/Domain-AI_Assistant-00eaff?style=flat-square"/>
+<img src="https://img.shields.io/badge/Tech-React_+_Groq-blueviolet?style=flat-square"/>
+
+</td>
+<td width="33%" align="center"></td>
+<td width="33%" align="center"></td>
+</tr>
+
+<tr>
+<td valign="top">
+
+### Futuristic AI Assistant
+A React + TypeScript AI assistant with a stunning cyber UI powered by Groq's ultra-fast LPU inference engine.
+
+**🔥 Key Features**
+- **Ultra-Fast:** Groq LPU 750+ tok/s  
+- **Cyber UI:** Glowing orb & animations  
+- **Multilingual:** Hindi, French, English  
+- **Secure:** `.env` protected API keys  
+
+</td>
+<td valign="top"></td>
+<td valign="top"></td>
+</tr>
+
+<tr>
+<td valign="top">
+
+<details>
+<summary><b>⚙️ How to Run MODEL-X</b></summary>
 
 ```bash
+git clone https://github.com/anshxgaur/MODEL-X.git
+cd MODEL-X
+cd src
+source venv/Scripts/activate
 npm install
 npm run dev
-```
 
-Open [http://localhost:5173](http://localhost:5173). Models are downloaded on first use and cached in the browser's Origin Private File System (OPFS).
 
-## How It Works
+## 🛠️ Tech Stack
 
-```
-@runanywhere/web (npm package)
-  ├── WASM engine (llama.cpp, whisper.cpp, sherpa-onnx)
-  ├── Model management (download, OPFS cache, load/unload)
-  └── TypeScript API (TextGeneration, STT, TTS, VAD, VLM, VoicePipeline)
-```
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react"/>
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript"/>
+  <img src="https://img.shields.io/badge/Groq-LPU-orange?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Flask-Python-black?style=for-the-badge&logo=flask"/>
+  <img src="https://img.shields.io/badge/Vite-5-purple?style=for-the-badge&logo=vite"/>
+</p>
 
-The app imports everything from `@runanywhere/web`:
+---
 
-```typescript
-import { RunAnywhere, SDKEnvironment } from '@runanywhere/web';
-import { TextGeneration, VLMWorkerBridge } from '@runanywhere/web-llamacpp';
+## 🔒 Security
 
-await RunAnywhere.initialize({ environment: SDKEnvironment.Development });
+- API keys stored in `.env` — **never committed to GitHub**
+- `.env` is listed in `.gitignore`
+- Use `VITE_GROQ_API_KEY` for frontend, `GROQ_API_KEY` for backend
 
-// Stream LLM text
-const { stream } = await TextGeneration.generateStream('Hello!', { maxTokens: 200 });
-for await (const token of stream) { console.log(token); }
+---
 
-// VLM: describe an image
-const result = await VLMWorkerBridge.shared.process(rgbPixels, width, height, 'Describe this.');
-```
-
-## Project Structure
-
-```
-src/
-├── main.tsx              # React root
-├── App.tsx               # Tab navigation (Chat | Vision | Voice)
-├── runanywhere.ts        # SDK init + model catalog + VLM worker
-├── workers/
-│   └── vlm-worker.ts     # VLM Web Worker entry (2 lines)
-├── hooks/
-│   └── useModelLoader.ts # Shared model download/load hook
-├── components/
-│   ├── ChatTab.tsx        # LLM streaming chat
-│   ├── VisionTab.tsx      # Camera + VLM inference
-│   ├── VoiceTab.tsx       # Full voice pipeline
-│   └── ModelBanner.tsx    # Download progress UI
-└── styles/
-    └── index.css          # Dark theme CSS
-```
-
-## Adding Your Own Models
-
-Edit the `MODELS` array in `src/runanywhere.ts`:
-
-```typescript
-{
-  id: 'my-custom-model',
-  name: 'My Model',
-  repo: 'username/repo-name',           // HuggingFace repo
-  files: ['model.Q4_K_M.gguf'],         // Files to download
-  framework: LLMFramework.LlamaCpp,
-  modality: ModelCategory.Language,      // or Multimodal, SpeechRecognition, etc.
-  memoryRequirement: 500_000_000,        // Bytes
-}
-```
-
-Any GGUF model compatible with llama.cpp works for LLM/VLM. STT/TTS/VAD use sherpa-onnx models.
-
-## Deployment
-
-### Vercel
-
-```bash
-npm run build
-npx vercel --prod
-```
-
-The included `vercel.json` sets the required Cross-Origin-Isolation headers.
-
-### Netlify
-
-Add a `_headers` file:
-
-```
-/*
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: credentialless
-```
-
-### Any static host
-
-Serve the `dist/` folder with these HTTP headers on all responses:
-
-```
-Cross-Origin-Opener-Policy: same-origin
-Cross-Origin-Embedder-Policy: credentialless
-```
-
-## Browser Requirements
-
-- Chrome 96+ or Edge 96+ (recommended: 120+)
-- WebAssembly (required)
-- SharedArrayBuffer (requires Cross-Origin Isolation headers)
-- OPFS (for persistent model cache)
-
-## Documentation
-
-- [SDK API Reference](https://docs.runanywhere.ai)
-- [npm package](https://www.npmjs.com/package/@runanywhere/web)
-- [GitHub](https://github.com/RunanywhereAI/runanywhere-sdks)
-
-## License
+## 📄 License
 
 MIT
+
+---
+
+<p align="center">Made with ❤️ by <b>Ansh Gaur</b></p>
