@@ -107,6 +107,8 @@ A React + TypeScript AI assistant with a stunning cyber UI powered by Groq's ult
 ```bash
 git clone https://github.com/anshxgaur/MODEL-X.git
 cd MODEL-X
+cd src
+source venv/Scripts/activate
 npm install
 npm run dev
 
