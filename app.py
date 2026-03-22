@@ -3,6 +3,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
 import os
+import json
 import webbrowser
 import psutil
 import pyautogui
@@ -11,6 +12,7 @@ import threading
 import time
 import re
 from datetime import datetime
+from pathlib import Path
 from pynput.keyboard import Controller, Key
 
 # Optional volume control
@@ -86,6 +88,59 @@ KEY_MAP = {
 }
 
 # ─────────────────────────────────────────
+# MEMORY SYSTEM
+# ─────────────────────────────────────────
+
+MEMORY_FILE = Path("memories.json")
+
+def load_memories():
+    if MEMORY_FILE.exists():
+        with open(MEMORY_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_memories(memories):
+    with open(MEMORY_FILE, "w") as f:
+        json.dump(memories, f, indent=2)
+
+@app.route('/api/memory', methods=['GET'])
+def get_memories():
+    return jsonify({"memories": load_memories()})
+
+@app.route('/api/memory/add', methods=['POST'])
+def add_memory():
+    data = request.json
+    text = data.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "Empty memory"}), 400
+
+    memories = load_memories()
+    memory = {
+        "id": str(int(time.time() * 1000)),
+        "text": text,
+        "timestamp": datetime.now().strftime("%d %b %Y, %H:%M"),
+        "category": data.get("category", "general")
+    }
+    memories.insert(0, memory)
+    memories = memories[:50]  # keep last 50 only
+    save_memories(memories)
+    return jsonify({"status": "Memory saved", "memory": memory})
+
+@app.route('/api/memory/delete', methods=['POST'])
+def delete_memory():
+    data = request.json
+    memory_id = data.get("id", "")
+    memories = load_memories()
+    memories = [m for m in memories if m["id"] != memory_id]
+    save_memories(memories)
+    return jsonify({"status": "Memory deleted"})
+
+@app.route('/api/memory/clear', methods=['POST'])
+def clear_memories():
+    save_memories([])
+    return jsonify({"status": "All memories cleared"})
+
+# ─────────────────────────────────────────
 # CHAT ROUTES
 # ─────────────────────────────────────────
 
@@ -116,13 +171,20 @@ def handle_chat():
     data = request.json
     messages = data.get("messages", [])
 
+    # Inject memories into system prompt so NOVA always knows user context
+    memories = load_memories()
+    memory_context = ""
+    if memories:
+        memory_context = "\n\nUser memories (use these to personalize your responses):\n"
+        memory_context += "\n".join([f"- {m['text']}" for m in memories])
+
     def generate():
         stream = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             max_tokens=1024,
             stream=True,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": SYSTEM_PROMPT + memory_context},
                 *messages
             ]
         )
@@ -155,7 +217,6 @@ def control_volume_action(action, percent=None):
             pyautogui.press("volumemute")
             return jsonify({"status": "Muted", "speak": "Muted."})
         elif action == "set" and percent is not None:
-            # Reset and set
             for _ in range(50): pyautogui.press("volumedown")
             for _ in range(int(percent / 2)): pyautogui.press("volumeup")
             return jsonify({"status": f"Volume set to {percent}%", "speak": f"Volume set to {percent} percent."})
@@ -232,7 +293,7 @@ def type_text():
 @app.route('/api/shortcut', methods=['POST'])
 def press_shortcut():
     data = request.json
-    keys = data.get("keys", [])  # e.g. ["ctrl", "c"]
+    keys = data.get("keys", [])
 
     try:
         mapped = []
@@ -376,7 +437,6 @@ def parse_shortcut_from_command(command):
     e.g. 'press ctrl c' → ['ctrl', 'c']
     e.g. 'press windows plus alt f4' → ['win', 'alt', 'f4']
     """
-    # Remove trigger words
     clean = command.replace("press", "").replace("hit", "").replace("shortcut", "")
     clean = clean.replace(" plus ", " ").replace("+", " ").strip()
 
@@ -384,14 +444,12 @@ def parse_shortcut_from_command(command):
     keys = []
     i = 0
     while i < len(words):
-        # Check two-word keys like "page up", "caps lock"
         if i + 1 < len(words):
             two_word = words[i] + " " + words[i+1]
             if two_word in KEY_MAP:
                 keys.append(two_word)
                 i += 2
                 continue
-        # Single word key
         word = words[i]
         if word in KEY_MAP or len(word) == 1:
             keys.append(word)
@@ -404,6 +462,39 @@ def parse_command():
     global typing_mode
     data = request.json
     command = data.get("command", "").lower()
+
+    # ── Memory Commands ──
+    if command.startswith("remember ") or command.startswith("nova remember "):
+        mem_text = command.replace("nova remember ", "").replace("remember ", "").strip()
+        memories = load_memories()
+        memory = {
+            "id": str(int(time.time() * 1000)),
+            "text": mem_text,
+            "timestamp": datetime.now().strftime("%d %b %Y, %H:%M"),
+            "category": "general"
+        }
+        memories.insert(0, memory)
+        memories = memories[:50]
+        save_memories(memories)
+        return jsonify({
+            "status": f"Memory saved: {mem_text}",
+            "speak": f"Got it. I'll remember that {mem_text}."
+        })
+
+    if "what do you remember" in command or "show memories" in command:
+        memories = load_memories()
+        count = len(memories)
+        return jsonify({
+            "status": f"{count} memories stored",
+            "speak": f"I have {count} memories stored. Check the memory panel on the left."
+        })
+
+    if "clear memories" in command or "forget everything" in command:
+        save_memories([])
+        return jsonify({
+            "status": "All memories cleared",
+            "speak": "All memories have been cleared."
+        })
 
     # ── Typing Mode ──
     if any(w in command for w in ["start writing", "start typing", "type for me", "nova type", "nova write"]):
@@ -421,7 +512,6 @@ def parse_command():
         })
 
     if typing_mode or command.startswith("type ") or command.startswith("write "):
-        # Extract the text to type
         text = command
         for prefix in ["type ", "write ", "nova type ", "nova write "]:
             if text.startswith(prefix):

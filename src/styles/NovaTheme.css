@@ -12,7 +12,9 @@
   z-index: 50;
 }
 
-/* --- Top Bar Elements --- */
+/* ─────────────────────────────────────────
+   TOP BAR
+───────────────────────────────────────── */
 .top-left, .top-right, .top-center {
   position: absolute;
   top: 15px;
@@ -38,7 +40,9 @@
   z-index: 10;
 }
 
-/* --- Center Orb Animations --- */
+/* ─────────────────────────────────────────
+   CENTER ORB
+───────────────────────────────────────── */
 .orb-ring {
   position: absolute;
   top: 50%; left: 50%;
@@ -50,7 +54,7 @@
   z-index: 1;
 }
 @keyframes spinRing {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  0%   { transform: translate(-50%, -50%) rotate(0deg); }
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
@@ -67,11 +71,13 @@
   transition: box-shadow 0.3s ease;
 }
 @keyframes breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.8; }
+  50%       { transform: translate(-50%, -50%) scale(1.1); opacity: 1;   }
 }
 
-/* --- Audio Bars --- */
+/* ─────────────────────────────────────────
+   AUDIO BARS
+───────────────────────────────────────── */
 .audio-bars {
   position: absolute;
   bottom: 100px;
@@ -85,18 +91,22 @@
   width: 6px;
   height: 20px;
   background: #00eaff;
+  border-radius: 2px;
   animation: pulse 1s infinite alternate;
 }
+.bar:nth-child(1) { animation-delay: 0s;   }
 .bar:nth-child(2) { animation-delay: 0.1s; }
 .bar:nth-child(3) { animation-delay: 0.2s; }
 .bar:nth-child(4) { animation-delay: 0.3s; }
 .bar:nth-child(5) { animation-delay: 0.4s; }
 @keyframes pulse {
-  0% { height: 10px; opacity: 0.4; }
-  100% { height: 40px; opacity: 1; }
+  0%   { height: 10px; opacity: 0.4; }
+  100% { height: 40px; opacity: 1;   }
 }
 
-/* --- Command Center --- */
+/* ─────────────────────────────────────────
+   COMMAND CENTER
+───────────────────────────────────────── */
 .command-center {
   position: absolute;
   bottom: 24px;
@@ -106,7 +116,6 @@
   width: 460px;
 }
 
-/* --- Input Row with Mic --- */
 .input-row {
   display: flex;
   align-items: flex-end;
@@ -134,22 +143,19 @@
   box-sizing: border-box;
   field-sizing: content;
 }
-
 .command-input:focus {
   box-shadow: 0 0 25px #00eaff99;
   border-color: #00eaff;
 }
-
-.command-input::placeholder {
-  color: #00eaff66;
-}
-
+.command-input::placeholder { color: #00eaff66; }
 .command-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* --- Mic Button --- */
+/* ─────────────────────────────────────────
+   MIC BUTTON
+───────────────────────────────────────── */
 .mic-btn {
   width: 48px;
   height: 48px;
@@ -168,13 +174,11 @@
   user-select: none;
   -webkit-user-select: none;
 }
-
 .mic-btn:hover {
   background: rgba(0, 234, 255, 0.15);
   box-shadow: 0 0 20px #00eaff88;
   transform: scale(1.05);
 }
-
 .mic-btn.mic-active {
   border-color: #ff3cac;
   background: rgba(255, 60, 172, 0.2);
@@ -182,84 +186,255 @@
               0 0 40px rgba(255, 60, 172, 0.3);
   animation: micPulse 0.5s infinite alternate;
 }
-
 @keyframes micPulse {
-  0% { transform: scale(1); }
+  0%   { transform: scale(1);    }
   100% { transform: scale(1.15); }
 }
 
-/* --- Right Panel --- */
-.right-panel {
+/* ─────────────────────────────────────────
+   SHARED PANEL BASE
+   (used by both left memory panel and right log panel)
+───────────────────────────────────────── */
+.nova-panel {
   position: absolute;
-  right: 30px;
-  top: 80px;
-  width: 420px;
-  height: calc(100vh - 160px);
+  top: 75px;
+  height: calc(100vh - 155px);
   background: rgba(0, 10, 20, 0.6);
-  border: 1px solid #00eaff;
+  border: 1px solid #00eaff55;
   border-radius: 8px;
-  box-shadow: 0 0 20px rgba(0, 234, 255, 0.2),
-              inset 0 0 15px rgba(0, 234, 255, 0.1);
-  padding: 20px;
+  box-shadow: 0 0 20px rgba(0, 234, 255, 0.15),
+              inset 0 0 15px rgba(0, 234, 255, 0.08);
+  padding: 16px;
   overflow-y: auto;
   z-index: 10;
   backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* ─────────────────────────────────────────
+   LEFT PANEL — MEMORY CORE
+───────────────────────────────────────── */
+.left-panel {
+  left: 24px;
+  width: 300px;
+}
+
+.left-panel::-webkit-scrollbar       { width: 4px; }
+.left-panel::-webkit-scrollbar-track { background: transparent; }
+.left-panel::-webkit-scrollbar-thumb { background: #00eaff44; border-radius: 2px; }
+
+.memory-title {
+  color: #00ff88;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  border-bottom: 1px solid #00eaff33;
+  padding-bottom: 8px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.memory-count {
+  font-size: 0.68rem;
+  color: #00eaff55;
+  border-left: 2px solid #00eaff33;
+  padding-left: 8px;
+  flex-shrink: 0;
+}
+
+.memory-input {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #00eaff33;
+  border-radius: 4px;
+  color: #00eaff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.68rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.memory-input:focus {
+  border-color: #00eaff88;
+  box-shadow: 0 0 10px #00eaff22;
+}
+.memory-input::placeholder { color: #00eaff33; }
+
+.memory-add-btn {
+  padding: 8px 12px;
+  background: rgba(0, 234, 255, 0.08);
+  border: 1px solid #00eaff44;
+  border-radius: 4px;
+  color: #00eaff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.memory-add-btn:hover {
+  background: rgba(0, 234, 255, 0.15);
+  box-shadow: 0 0 10px #00eaff33;
+}
+
+.memory-clear-btn {
+  background: transparent;
+  border: 1px solid #ff3cac44;
+  border-radius: 4px;
+  color: #ff3cac88;
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  font-family: 'Orbitron', sans-serif;
+  transition: border-color 0.2s, color 0.2s;
+}
+.memory-clear-btn:hover {
+  border-color: #ff3cac99;
+  color: #ff3caccc;
+}
+
+.memory-tip {
+  font-size: 0.62rem;
+  color: #00ff8844;
+  border-left: 2px solid #00ff8833;
+  padding-left: 8px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.memory-empty {
+  color: #00eaff22;
+  font-size: 0.72rem;
+  text-align: center;
+  margin-top: 20px;
+  line-height: 1.8;
+}
+
+.memory-card {
+  background: rgba(0, 234, 255, 0.04);
+  border: 1px solid #00eaff1a;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+.memory-card:hover {
+  border-color: #00eaff33;
+  background: rgba(0, 234, 255, 0.07);
+}
+
+.memory-card-text {
+  color: #00eaff;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.memory-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.memory-card-time {
+  color: #00ff8844;
+  font-size: 0.62rem;
+}
+
+.memory-delete-btn {
+  background: transparent;
+  border: none;
+  color: #ff3cac55;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.memory-delete-btn:hover { color: #ff3caccc; }
+
+/* ─────────────────────────────────────────
+   RIGHT PANEL — SYSTEM LOG
+───────────────────────────────────────── */
+.right-panel {
+  position: absolute;
+  right: 24px;
+  top: 75px;
+  width: 380px;
+  height: calc(100vh - 155px);
+  background: rgba(0, 10, 20, 0.6);
+  border: 1px solid #00eaff55;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 234, 255, 0.15),
+              inset 0 0 15px rgba(0, 234, 255, 0.08);
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .right-panel h3 {
   margin: 0 0 10px 0;
   color: #00ff88;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  border-bottom: 1px solid #00eaff44;
-  padding-bottom: 5px;
+  letter-spacing: 3px;
+  border-bottom: 1px solid #00eaff33;
+  padding-bottom: 8px;
   flex-shrink: 0;
 }
 
+.right-panel::-webkit-scrollbar       { width: 4px; }
+.right-panel::-webkit-scrollbar-track { background: transparent; }
+.right-panel::-webkit-scrollbar-thumb { background: #00eaff44; border-radius: 2px; }
+
+/* ─────────────────────────────────────────
+   MESSAGES
+───────────────────────────────────────── */
 .ai-message {
   color: #00eaff;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  text-shadow: 0 0 2px #00eaff44;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  text-shadow: 0 0 2px #00eaff22;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .user-message {
-  color: #aaaaaa;
-  font-size: 0.85rem;
+  color: #888;
+  font-size: 0.78rem;
   text-align: right;
   margin-bottom: -5px;
 }
 
-/* --- System Message (voice commands) --- */
 .system-message {
   color: #00ff88;
-  font-size: 0.85rem;
-  border-left: 2px solid #00ff88;
+  font-size: 0.78rem;
+  border-left: 2px solid #00ff8888;
   padding-left: 10px;
   opacity: 0.9;
 }
 
-/* --- Custom Scrollbar --- */
-.right-panel::-webkit-scrollbar { width: 6px; }
-.right-panel::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-.right-panel::-webkit-scrollbar-thumb { background: #00eaff; border-radius: 3px; }
-
-/* --- Listening state border on panel --- */
+/* ─────────────────────────────────────────
+   PANEL STATE COLORS
+───────────────────────────────────────── */
 .right-panel.listening {
-  border-color: #ff3cac;
-  box-shadow: 0 0 20px rgba(255, 60, 172, 0.3),
-              inset 0 0 15px rgba(255, 60, 172, 0.1);
+  border-color: #ff3cac88;
+  box-shadow: 0 0 20px rgba(255, 60, 172, 0.25),
+              inset 0 0 15px rgba(255, 60, 172, 0.08);
 }
 
-/* --- Speaking state border on panel --- */
 .right-panel.speaking {
-  border-color: #00ff88;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3),
-              inset 0 0 15px rgba(0, 255, 136, 0.1);
+  border-color: #00ff8888;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.25),
+              inset 0 0 15px rgba(0, 255, 136, 0.08);
 }
