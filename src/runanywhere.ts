@@ -1,90 +1,110 @@
 /**
- * NOVA V5 - PERFORMANCE OPTIMIZED EDITION 🚀
+ * NOVA V6 - OLLAMA LOCAL ENGINE 🦙
+ * Replaces RunAnywhere SDK with local Ollama
+ * Cache → Ollama → Groq fallback (handled by backend)
  */
 
-import {
-  RunAnywhere,
-  SDKEnvironment,
-  ModelCategory,
-  LLMFramework,
-  type CompactModelDef,
-} from '@runanywhere/web';
+const OLLAMA_URL = 'http://localhost:11434';
+const BACKEND_URL = 'http://localhost:5000';
 
-import { LlamaCPP } from '@runanywhere/web-llamacpp';
-import { ONNX } from '@runanywhere/web-onnx';
+// ─────────────────────────────────────────
+// OLLAMA STATUS
+// ─────────────────────────────────────────
 
-// ⚡ FAST + LIGHT MODEL
-const MODELS: CompactModelDef[] = [
-  {
-    id: 'smollm2-135m-speed',
-    name: 'Nova Core ⚡',
-    repo: 'HuggingFaceTB/SmolLM2-135M-Instruct-GGUF',
+export type AISource = 'ollama' | 'groq' | 'cache' | 'offline';
 
-    // 🔥 Faster quantization (much better than Q8)
-    files: ['smollm2-135m-instruct-q4_k_m.gguf'],
+export interface NovaStatus {
+  ollama: boolean;
+  backend: boolean;
+  model: string;
+  source: AISource;
+}
 
-    framework: LLMFramework.LlamaCpp,
-    modality: ModelCategory.Language,
-
-    // 🔥 Lower memory = faster load
-    memoryRequirement: 60_000_000,
+/**
+ * Check if Ollama is running locally
+ */
+export async function isOllamaOnline(): Promise<boolean> {
+  try {
+    const res = await fetch(OLLAMA_URL, { signal: AbortSignal.timeout(2000) });
+    return res.ok;
+  } catch {
+    return false;
   }
-];
+}
 
-// 🔒 Prevent multiple initializations
-let _initPromise: Promise<void> | null = null;
+/**
+ * Check if Flask backend is running
+ */
+export async function isBackendOnline(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
-export async function initSDK(): Promise<void> {
-  if (_initPromise) return _initPromise;
+/**
+ * Get full NOVA system status
+ */
+export async function getNovaStatus(): Promise<NovaStatus> {
+  const [ollama, backend] = await Promise.all([
+    isOllamaOnline(),
+    isBackendOnline(),
+  ]);
 
-  _initPromise = (async () => {
-    console.log("NOVA: Initializing SDK...");
+  let source: AISource = 'offline';
+  let model = 'none';
 
-    await RunAnywhere.initialize({
-      environment: SDKEnvironment.Production,
-
-      // ⚡ Turn OFF debug for performance
-      debug: false,
-    });
-
-    // 🚀 Try WebGPU first (fastest)
+  if (backend) {
     try {
-      await LlamaCPP.register({
-        acceleration: 'webgpu',
-
-        // 🔥 Use all CPU cores efficiently
-        threads: navigator.hardwareConcurrency || 4,
-      });
-
-      console.log("NOVA: WebGPU Engaged 🚀");
-    } catch (error) {
-      console.warn("NOVA: WebGPU failed → falling back to CPU 🛡️");
-
-      await LlamaCPP.register({
-        acceleration: 'cpu',
-        threads: navigator.hardwareConcurrency || 4,
-      });
+      const res = await fetch(`${BACKEND_URL}/health`);
+      const data = await res.json();
+      model = data.model || 'qwen3:4b';
+      if (data.ollama?.includes('online')) {
+        source = 'ollama';
+      } else {
+        source = 'groq';
+      }
+    } catch {
+      source = ollama ? 'ollama' : 'groq';
     }
+  }
 
-    // 🔄 Register ONNX (for other models if needed)
-    await ONNX.register();
-
-    // ✅ Correct (no extra args — matches your SDK)
-    await RunAnywhere.registerModels(MODELS);
-
-    console.log("NOVA: Models ready ⚡");
-  })();
-
-  return _initPromise;
+  return { ollama, backend, model, source };
 }
 
-// 🔍 Helper to check acceleration mode
-export function getAccelerationMode(): string | null {
-  return LlamaCPP.isRegistered ? LlamaCPP.accelerationMode : null;
+/**
+ * Get acceleration mode label for UI display
+ */
+export function getAccelerationMode(): string {
+  return 'ollama-local';
 }
 
-export { RunAnywhere, ModelCategory };
+/**
+ * Get display label for current AI source
+ */
+export function getSourceLabel(source: AISource): string {
+  switch (source) {
+    case 'ollama': return '[CORE: OLLAMA 🦙]';
+    case 'cache': return '[CORE: CACHE ⚡]';
+    case 'groq': return '[CORE: GROQ 🌐]';
+    case 'offline': return '[CORE: OFFLINE ❌]';
+    default: return '[CORE: UNKNOWN]';
+  }
+}
 
-// 🔌 Export ModelManager
-import { ModelManager as SDKModelManager } from '@runanywhere/web';
-export const ModelManager = SDKModelManager;
+/**
+ * Get color for current AI source
+ */
+export function getSourceColor(source: AISource): string {
+  switch (source) {
+    case 'ollama': return '#00ff88';
+    case 'cache': return '#ffaa00';
+    case 'groq': return '#ff3cac';
+    case 'offline': return '#ff3333';
+    default: return '#00eaff';
+  }
+}
+
+export { OLLAMA_URL, BACKEND_URL };
