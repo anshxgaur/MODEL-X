@@ -141,6 +141,139 @@ def clear_memories():
     return jsonify({"status": "All memories cleared"})
 
 # ─────────────────────────────────────────
+# CONVERSATION LOGGING SYSTEM
+# ─────────────────────────────────────────
+
+CONVERSATIONS_FILE = Path("conversations.json")
+
+def load_conversations():
+    if CONVERSATIONS_FILE.exists():
+        with open(CONVERSATIONS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_conversations(conversations):
+    with open(CONVERSATIONS_FILE, "w") as f:
+        json.dump(conversations, f, indent=2)
+
+def log_conversation(user_message, assistant_message):
+    """Automatically log every conversation exchange"""
+    conversations = load_conversations()
+    now = datetime.now()
+    
+    conversation = {
+        "id": str(int(time.time() * 1000)),
+        "timestamp": now.isoformat(),
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%H:%M:%S"),
+        "user": user_message,
+        "assistant": assistant_message
+    }
+    
+    conversations.append(conversation)
+    # Keep only last 500 conversations
+    conversations = conversations[-500:]
+    save_conversations(conversations)
+
+def get_conversations_by_timeframe(timeframe):
+    """Filter conversations by timeframe"""
+    conversations = load_conversations()
+    now = datetime.now()
+    
+    if timeframe == "all":
+        return conversations
+    
+    filtered = []
+    for conv in conversations:
+        conv_time = datetime.fromisoformat(conv["timestamp"])
+        
+        if timeframe == "today":
+            if conv_time.date() == now.date():
+                filtered.append(conv)
+        
+        elif timeframe == "yesterday":
+            yesterday = now.date().replace(day=now.day - 1) if now.day > 1 else None
+            if yesterday and conv_time.date() == yesterday:
+                filtered.append(conv)
+        
+        elif timeframe == "last_night":
+            # Yesterday 6 PM to today 4 AM
+            yesterday = now.date().replace(day=now.day - 1) if now.day > 1 else None
+            if yesterday:
+                start = datetime.combine(yesterday, datetime.min.time()).replace(hour=18)
+                end = datetime.combine(now.date(), datetime.min.time()).replace(hour=4)
+                if start <= conv_time <= end:
+                    filtered.append(conv)
+        
+        elif timeframe == "this_week":
+            days_ago = (now - conv_time).days
+            if days_ago <= 7:
+                filtered.append(conv)
+    
+    return filtered
+
+def summarize_conversations(conversations):
+    """Use LLM to generate intelligent summary"""
+    if not conversations:
+        return "No conversations found for this timeframe."
+    
+    # Build conversation text
+    conv_text = ""
+    for conv in conversations:
+        conv_text += f"[{conv['date']} {conv['time']}]\n"
+        conv_text += f"User: {conv['user']}\n"
+        conv_text += f"Nova: {conv['assistant']}\n\n"
+    
+    # Generate summary using LLM
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=500,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are NOVA. Generate a concise, intelligent summary of the conversation history. Highlight key topics, important information, and main discussion points. Keep it conversational and brief."
+                },
+                {
+                    "role": "user",
+                    "content": f"Summarize these conversations:\n\n{conv_text}"
+                }
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
+
+@app.route('/api/conversations', methods=['GET'])
+def get_conversations():
+    timeframe = request.args.get('timeframe', 'all')
+    conversations = get_conversations_by_timeframe(timeframe)
+    return jsonify({
+        "conversations": conversations,
+        "count": len(conversations),
+        "timeframe": timeframe
+    })
+
+@app.route('/api/conversations/summary', methods=['POST'])
+def get_conversation_summary():
+    data = request.json
+    timeframe = data.get('timeframe', 'all')
+    
+    conversations = get_conversations_by_timeframe(timeframe)
+    summary = summarize_conversations(conversations)
+    
+    return jsonify({
+        "summary": summary,
+        "count": len(conversations),
+        "timeframe": timeframe
+    })
+
+@app.route('/api/conversations/clear', methods=['POST'])
+def clear_conversations():
+    save_conversations([])
+    return jsonify({"status": "All conversations cleared"})
+
+# ─────────────────────────────────────────
 # CHAT ROUTES
 # ─────────────────────────────────────────
 
@@ -178,6 +311,10 @@ def handle_chat():
         memory_context = "\n\nUser memories (use these to personalize your responses):\n"
         memory_context += "\n".join([f"- {m['text']}" for m in memories])
 
+    # Get the latest user message for logging
+    user_message = messages[-1].get("content", "") if messages else ""
+    assistant_response = []
+
     def generate():
         stream = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -191,7 +328,13 @@ def handle_chat():
         for chunk in stream:
             delta = chunk.choices[0].delta.content
             if delta:
+                assistant_response.append(delta)
                 yield delta
+        
+        # Log the complete conversation after streaming
+        if user_message and assistant_response:
+            full_response = "".join(assistant_response)
+            log_conversation(user_message, full_response)
 
     return Response(stream_with_context(generate()), mimetype='text/plain')
 
@@ -494,6 +637,52 @@ def parse_command():
         return jsonify({
             "status": "All memories cleared",
             "speak": "All memories have been cleared."
+        })
+
+    # ── Conversation Summary Commands ──
+    timeframe_map = {
+        "last night": "last_night",
+        "yesterday": "yesterday",
+        "today": "today",
+        "this week": "this_week",
+        "all time": "all",
+        "everything": "all"
+    }
+    
+    if any(phrase in command for phrase in ["conversation", "talked about", "discussed", "chat", "brief"]):
+        # Determine timeframe
+        timeframe = "all"
+        for phrase, tf in timeframe_map.items():
+            if phrase in command:
+                timeframe = tf
+                break
+        
+        conversations = get_conversations_by_timeframe(timeframe)
+        
+        if not conversations:
+            return jsonify({
+                "status": "No conversations found",
+                "speak": f"I don't have any recorded conversations for {timeframe.replace('_', ' ')}."
+            })
+        
+        summary = summarize_conversations(conversations)
+        
+        timeframe_readable = timeframe.replace('_', ' ')
+        return jsonify({
+            "status": f"Summary generated for {timeframe_readable}",
+            "speak": summary,
+            "data": {
+                "summary": summary,
+                "count": len(conversations),
+                "timeframe": timeframe
+            }
+        })
+    
+    if "clear conversations" in command or "delete conversation history" in command:
+        save_conversations([])
+        return jsonify({
+            "status": "Conversation history cleared",
+            "speak": "All conversation history has been cleared."
         })
 
     # ── Typing Mode ──
