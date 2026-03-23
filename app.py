@@ -11,7 +11,7 @@ import platform
 import threading
 import time
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from pynput.keyboard import Controller, Key
 
@@ -39,6 +39,7 @@ keyboard = Controller()
 
 # Typing mode state
 typing_mode = False
+alarms = []
 
 SYSTEM_PROMPT = "You are NOVA, an advanced AI assistant with a sleek futuristic personality. Be helpful, concise, and slightly futuristic in tone."
 
@@ -92,6 +93,7 @@ KEY_MAP = {
 # ─────────────────────────────────────────
 
 MEMORY_FILE = Path("memories.json")
+CONVERSATIONS_FILE = Path("conversations.json")
 
 def load_memories():
     if MEMORY_FILE.exists():
@@ -102,6 +104,86 @@ def load_memories():
 def save_memories(memories):
     with open(MEMORY_FILE, "w") as f:
         json.dump(memories, f, indent=2)
+
+def load_conversations():
+    if CONVERSATIONS_FILE.exists():
+        with open(CONVERSATIONS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_conversations(conversations):
+    with open(CONVERSATIONS_FILE, "w") as f:
+        json.dump(conversations, f, indent=2)
+
+def log_conversation(user_message, assistant_message):
+    """Log a conversation exchange with timestamp"""
+    conversations = load_conversations()
+    entry = {
+        "id": str(int(time.time() * 1000)),
+        "timestamp": datetime.now().isoformat(),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "time": datetime.now().strftime("%H:%M:%S"),
+        "user": user_message,
+        "assistant": assistant_message
+    }
+    conversations.append(entry)
+    conversations = conversations[-500:]
+    save_conversations(conversations)
+    return entry
+
+def get_conversations_by_timeframe(timeframe):
+    """Get conversations filtered by timeframe"""
+    conversations = load_conversations()
+    now = datetime.now()
+    
+    filtered = []
+    for conv in conversations:
+        conv_time = datetime.fromisoformat(conv["timestamp"])
+        
+        if timeframe == "today":
+            if conv_time.date() == now.date():
+                filtered.append(conv)
+        elif timeframe == "yesterday":
+            yesterday = now.date() - timedelta(days=1)
+            if conv_time.date() == yesterday:
+                filtered.append(conv)
+        elif timeframe == "last_night":
+            yesterday = now.date() - timedelta(days=1)
+            if conv_time.date() == yesterday and conv_time.hour >= 18:
+                filtered.append(conv)
+            elif conv_time.date() == now.date() and conv_time.hour < 4:
+                filtered.append(conv)
+        elif timeframe == "this_week":
+            days_diff = (now.date() - conv_time.date()).days
+            if days_diff <= 7:
+                filtered.append(conv)
+        elif timeframe == "all":
+            filtered.append(conv)
+    
+    return filtered
+
+def summarize_conversation(conversations):
+    """Generate a brief summary of conversations"""
+    if not conversations:
+        return "No conversations found for this timeframe."
+    
+    conv_text = ""
+    for conv in conversations:
+        conv_text += f"[{conv['time']}] User: {conv['user']}\n"
+        conv_text += f"[{conv['time']}] NOVA: {conv['assistant']}\n\n"
+    
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=512,
+            messages=[
+                {"role": "system", "content": "You are NOVA. Summarize the following conversation concisely, highlighting key topics discussed and any important information shared."},
+                {"role": "user", "content": f"Summarize this conversation:\n\n{conv_text}"}
+            ]
+        )
+        return response.choices[0].message.content
+    except:
+        return "Could not generate summary. Here are the conversations:\n" + conv_text
 
 @app.route('/api/memory', methods=['GET'])
 def get_memories():
@@ -122,7 +204,7 @@ def add_memory():
         "category": data.get("category", "general")
     }
     memories.insert(0, memory)
-    memories = memories[:50]  # keep last 50 only
+    memories = memories[:50]
     save_memories(memories)
     return jsonify({"status": "Memory saved", "memory": memory})
 
@@ -140,128 +222,25 @@ def clear_memories():
     save_memories([])
     return jsonify({"status": "All memories cleared"})
 
-# ─────────────────────────────────────────
-# CONVERSATION LOGGING SYSTEM
-# ─────────────────────────────────────────
-
-CONVERSATIONS_FILE = Path("conversations.json")
-
-def load_conversations():
-    if CONVERSATIONS_FILE.exists():
-        with open(CONVERSATIONS_FILE, "r") as f:
-            return json.load(f)
-    return []
-
-def save_conversations(conversations):
-    with open(CONVERSATIONS_FILE, "w") as f:
-        json.dump(conversations, f, indent=2)
-
-def log_conversation(user_message, assistant_message):
-    """Automatically log every conversation exchange"""
-    conversations = load_conversations()
-    now = datetime.now()
-    
-    conversation = {
-        "id": str(int(time.time() * 1000)),
-        "timestamp": now.isoformat(),
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M:%S"),
-        "user": user_message,
-        "assistant": assistant_message
-    }
-    
-    conversations.append(conversation)
-    # Keep only last 500 conversations
-    conversations = conversations[-500:]
-    save_conversations(conversations)
-
-def get_conversations_by_timeframe(timeframe):
-    """Filter conversations by timeframe"""
-    conversations = load_conversations()
-    now = datetime.now()
-    
-    if timeframe == "all":
-        return conversations
-    
-    filtered = []
-    for conv in conversations:
-        conv_time = datetime.fromisoformat(conv["timestamp"])
-        
-        if timeframe == "today":
-            if conv_time.date() == now.date():
-                filtered.append(conv)
-        
-        elif timeframe == "yesterday":
-            yesterday = now.date().replace(day=now.day - 1) if now.day > 1 else None
-            if yesterday and conv_time.date() == yesterday:
-                filtered.append(conv)
-        
-        elif timeframe == "last_night":
-            # Yesterday 6 PM to today 4 AM
-            yesterday = now.date().replace(day=now.day - 1) if now.day > 1 else None
-            if yesterday:
-                start = datetime.combine(yesterday, datetime.min.time()).replace(hour=18)
-                end = datetime.combine(now.date(), datetime.min.time()).replace(hour=4)
-                if start <= conv_time <= end:
-                    filtered.append(conv)
-        
-        elif timeframe == "this_week":
-            days_ago = (now - conv_time).days
-            if days_ago <= 7:
-                filtered.append(conv)
-    
-    return filtered
-
-def summarize_conversations(conversations):
-    """Use LLM to generate intelligent summary"""
-    if not conversations:
-        return "No conversations found for this timeframe."
-    
-    # Build conversation text
-    conv_text = ""
-    for conv in conversations:
-        conv_text += f"[{conv['date']} {conv['time']}]\n"
-        conv_text += f"User: {conv['user']}\n"
-        conv_text += f"Nova: {conv['assistant']}\n\n"
-    
-    # Generate summary using LLM
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            max_tokens=500,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are NOVA. Generate a concise, intelligent summary of the conversation history. Highlight key topics, important information, and main discussion points. Keep it conversational and brief."
-                },
-                {
-                    "role": "user",
-                    "content": f"Summarize these conversations:\n\n{conv_text}"
-                }
-            ]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error generating summary: {str(e)}"
-
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
     timeframe = request.args.get('timeframe', 'all')
     conversations = get_conversations_by_timeframe(timeframe)
-    return jsonify({
-        "conversations": conversations,
-        "count": len(conversations),
-        "timeframe": timeframe
-    })
+    return jsonify({"conversations": conversations, "count": len(conversations)})
 
 @app.route('/api/conversations/summary', methods=['POST'])
 def get_conversation_summary():
     data = request.json
-    timeframe = data.get('timeframe', 'all')
-    
+    timeframe = data.get("timeframe", "all")
     conversations = get_conversations_by_timeframe(timeframe)
-    summary = summarize_conversations(conversations)
     
+    if not conversations:
+        return jsonify({
+            "summary": f"No conversations found for {timeframe}.",
+            "count": 0
+        })
+    
+    summary = summarize_conversation(conversations)
     return jsonify({
         "summary": summary,
         "count": len(conversations),
@@ -304,18 +283,17 @@ def handle_chat():
     data = request.json
     messages = data.get("messages", [])
 
-    # Inject memories into system prompt so NOVA always knows user context
     memories = load_memories()
     memory_context = ""
     if memories:
         memory_context = "\n\nUser memories (use these to personalize your responses):\n"
         memory_context += "\n".join([f"- {m['text']}" for m in memories])
 
-    # Get the latest user message for logging
-    user_message = messages[-1].get("content", "") if messages else ""
-    assistant_response = []
+    full_response = ""
+    user_message = messages[-1]["content"] if messages else ""
 
     def generate():
+        nonlocal full_response
         stream = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             max_tokens=1024,
@@ -328,12 +306,10 @@ def handle_chat():
         for chunk in stream:
             delta = chunk.choices[0].delta.content
             if delta:
-                assistant_response.append(delta)
+                full_response += delta
                 yield delta
         
-        # Log the complete conversation after streaming
-        if user_message and assistant_response:
-            full_response = "".join(assistant_response)
+        if user_message and full_response:
             log_conversation(user_message, full_response)
 
     return Response(stream_with_context(generate()), mimetype='text/plain')
@@ -350,18 +326,22 @@ def control_volume_action(action, percent=None):
     if not HAS_PYCAW or not volume_iface:
         if action == "increase":
             presses = int((percent or 15) / 2)
-            for _ in range(presses): pyautogui.press("volumeup")
-            return jsonify({"status": f"Volume increased", "speak": "Volume increased."})
+            for _ in range(presses): 
+                pyautogui.press("volumeup")
+            return jsonify({"status": "Volume increased", "speak": "Volume increased."})
         elif action == "decrease":
             presses = int((percent or 15) / 2)
-            for _ in range(presses): pyautogui.press("volumedown")
-            return jsonify({"status": f"Volume decreased", "speak": "Volume decreased."})
+            for _ in range(presses): 
+                pyautogui.press("volumedown")
+            return jsonify({"status": "Volume decreased", "speak": "Volume decreased."})
         elif action == "mute":
             pyautogui.press("volumemute")
             return jsonify({"status": "Muted", "speak": "Muted."})
         elif action == "set" and percent is not None:
-            for _ in range(50): pyautogui.press("volumedown")
-            for _ in range(int(percent / 2)): pyautogui.press("volumeup")
+            for _ in range(50): 
+                pyautogui.press("volumedown")
+            for _ in range(int(percent / 2)): 
+                pyautogui.press("volumeup")
             return jsonify({"status": f"Volume set to {percent}%", "speak": f"Volume set to {percent} percent."})
 
     try:
@@ -402,6 +382,8 @@ def control_volume_action(action, percent=None):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+    return jsonify({"error": "Unknown volume action"}), 400
+
 @app.route('/api/volume', methods=['POST'])
 def control_volume():
     data = request.json
@@ -410,128 +392,26 @@ def control_volume():
     return control_volume_action(action, percent)
 
 # ─────────────────────────────────────────
-# TYPING CONTROL
+# ALARM FUNCTION
 # ─────────────────────────────────────────
 
-@app.route('/api/type', methods=['POST'])
-def type_text():
-    data = request.json
-    text = data.get("text", "")
-    delay = data.get("delay", 0.05)
-
-    try:
-        time.sleep(0.5)  # small delay so user can focus window
-        pyautogui.typewrite(text, interval=delay)
-        return jsonify({
-            "status": f"Typed: {text}",
-            "speak": f"Done. I typed: {text}"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ─────────────────────────────────────────
-# SHORTCUT KEYS
-# ─────────────────────────────────────────
-
-@app.route('/api/shortcut', methods=['POST'])
-def press_shortcut():
-    data = request.json
-    keys = data.get("keys", [])
-
-    try:
-        mapped = []
-        for k in keys:
-            k_lower = k.lower()
-            if k_lower in KEY_MAP:
-                mapped.append(KEY_MAP[k_lower])
-            elif len(k) == 1:
-                mapped.append(k)
-            else:
-                mapped.append(k)
-
-        if len(mapped) == 1:
-            pyautogui.press(str(mapped[0]).replace("Key.", ""))
-        else:
-            pyautogui.hotkey(*[
-                str(k).replace("<Key.", "").replace(">", "").replace("Key.", "")
-                if not isinstance(k, str) else k
-                for k in mapped
-            ])
-
-        key_str = " + ".join(keys)
-        return jsonify({
-            "status": f"Pressed {key_str}",
-            "speak": f"Pressed {key_str}."
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ─────────────────────────────────────────
-# ALARMS
-# ─────────────────────────────────────────
-
-alarms = []
-
-def alarm_thread(alarm_time_str, label=""):
+def alarm_thread(alarm_time):
     while True:
         now = datetime.now().strftime("%H:%M")
-        if now == alarm_time_str:
-            pyautogui.alert(
-                text=f"⏰ NOVA ALARM: {label or alarm_time_str}",
-                title="NOVA Alarm",
-                button="Dismiss"
-            )
+        if now == alarm_time and alarm_time in alarms:
+            for _ in range(5):
+                print(f"\a🔔 ALARM! {alarm_time}")
+                time.sleep(1)
+            alarms.remove(alarm_time)
             break
-        time.sleep(15)
-
-@app.route('/api/alarm', methods=['POST'])
-def set_alarm():
-    data = request.json
-    alarm_time = data.get("time", "")
-    label = data.get("label", "")
-    try:
-        datetime.strptime(alarm_time, "%H:%M")
-        alarms.append(alarm_time)
-        threading.Thread(target=alarm_thread, args=(alarm_time, label), daemon=True).start()
-        return jsonify({"status": f"Alarm set for {alarm_time}"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route('/api/alarm', methods=['GET'])
-def get_alarms():
-    return jsonify({"alarms": alarms})
-
-# ─────────────────────────────────────────
-# SHUTDOWN
-# ─────────────────────────────────────────
-
-@app.route('/api/shutdown', methods=['POST'])
-def shutdown():
-    data = request.json
-    delay = data.get("delay", 10)
-
-    def do_shutdown():
-        time.sleep(2)
-        if system_platform == "Windows":
-            os.system(f"shutdown /s /t {delay}")
-        else:
-            os.system("shutdown -h now")
-
-    threading.Thread(target=do_shutdown, daemon=True).start()
-    return jsonify({"status": f"Shutting down in {delay} seconds"})
-
-@app.route('/api/shutdown/cancel', methods=['POST'])
-def cancel_shutdown():
-    if system_platform == "Windows":
-        os.system("shutdown /a")
-    return jsonify({"status": "Shutdown cancelled"})
+        time.sleep(30)
 
 # ─────────────────────────────────────────
 # MOUSE CONTROL
 # ─────────────────────────────────────────
 
 @app.route('/api/mouse', methods=['POST'])
-def mouse_control():
+def control_mouse():
     data = request.json
     action = data.get("action", "")
     x = data.get("x", None)
@@ -570,16 +450,10 @@ def mouse_control():
 # ─────────────────────────────────────────
 
 def parse_percent(command):
-    """Extract percentage from command e.g. 'decrease volume 30 percent' → 30"""
     match = re.search(r'(\d+)\s*(?:percent|%)', command)
     return int(match.group(1)) if match else None
 
 def parse_shortcut_from_command(command):
-    """
-    Parse shortcut keys from natural language
-    e.g. 'press ctrl c' → ['ctrl', 'c']
-    e.g. 'press windows plus alt f4' → ['win', 'alt', 'f4']
-    """
     clean = command.replace("press", "").replace("hit", "").replace("shortcut", "")
     clean = clean.replace(" plus ", " ").replace("+", " ").strip()
 
@@ -606,7 +480,7 @@ def parse_command():
     data = request.json
     command = data.get("command", "").lower()
 
-    # ── Memory Commands ──
+    # Memory Commands
     if command.startswith("remember ") or command.startswith("nova remember "):
         mem_text = command.replace("nova remember ", "").replace("remember ", "").strip()
         memories = load_memories()
@@ -639,53 +513,68 @@ def parse_command():
             "speak": "All memories have been cleared."
         })
 
-    # ── Conversation Summary Commands ──
-    timeframe_map = {
-        "last night": "last_night",
-        "yesterday": "yesterday",
-        "today": "today",
-        "this week": "this_week",
-        "all time": "all",
-        "everything": "all"
-    }
-    
-    if any(phrase in command for phrase in ["conversation", "talked about", "discussed", "chat", "brief"]):
-        # Determine timeframe
-        timeframe = "all"
-        for phrase, tf in timeframe_map.items():
-            if phrase in command:
-                timeframe = tf
-                break
-        
-        conversations = get_conversations_by_timeframe(timeframe)
-        
-        if not conversations:
+    # Conversation Summary Commands
+    if any(phrase in command for phrase in ["conversation last night", "what did we talk about last night", "brief of last night", "summary of last night"]):
+        conversations = get_conversations_by_timeframe("last_night")
+        if conversations:
+            summary = summarize_conversation(conversations)
+            return jsonify({
+                "status": "Generating summary",
+                "speak": f"Here's what we discussed last night: {summary}",
+                "summary": summary
+            })
+        else:
             return jsonify({
                 "status": "No conversations found",
-                "speak": f"I don't have any recorded conversations for {timeframe.replace('_', ' ')}."
+                "speak": "I don't have any record of conversations from last night."
             })
-        
-        summary = summarize_conversations(conversations)
-        
-        timeframe_readable = timeframe.replace('_', ' ')
-        return jsonify({
-            "status": f"Summary generated for {timeframe_readable}",
-            "speak": summary,
-            "data": {
-                "summary": summary,
-                "count": len(conversations),
-                "timeframe": timeframe
-            }
-        })
     
-    if "clear conversations" in command or "delete conversation history" in command:
-        save_conversations([])
-        return jsonify({
-            "status": "Conversation history cleared",
-            "speak": "All conversation history has been cleared."
-        })
+    if any(phrase in command for phrase in ["conversation yesterday", "what did we talk about yesterday", "yesterday's conversation"]):
+        conversations = get_conversations_by_timeframe("yesterday")
+        if conversations:
+            summary = summarize_conversation(conversations)
+            return jsonify({
+                "status": "Generating summary",
+                "speak": f"Here's what we discussed yesterday: {summary}",
+                "summary": summary
+            })
+        else:
+            return jsonify({
+                "status": "No conversations found",
+                "speak": "I don't have any conversations from yesterday."
+            })
+    
+    if any(phrase in command for phrase in ["conversation today", "what did we talk about today", "today's conversation"]):
+        conversations = get_conversations_by_timeframe("today")
+        if conversations:
+            summary = summarize_conversation(conversations)
+            return jsonify({
+                "status": "Generating summary",
+                "speak": f"Here's what we discussed today: {summary}",
+                "summary": summary
+            })
+        else:
+            return jsonify({
+                "status": "No conversations found",
+                "speak": "We haven't had any conversations today yet."
+            })
+    
+    if any(phrase in command for phrase in ["all conversations", "entire conversation history", "full conversation"]):
+        conversations = get_conversations_by_timeframe("all")
+        if conversations:
+            summary = summarize_conversation(conversations)
+            return jsonify({
+                "status": "Generating summary",
+                "speak": f"Here's a summary of all our conversations: {summary}",
+                "summary": summary
+            })
+        else:
+            return jsonify({
+                "status": "No conversations found",
+                "speak": "I don't have any conversation history stored."
+            })
 
-    # ── Typing Mode ──
+    # Typing Mode
     if any(w in command for w in ["start writing", "start typing", "type for me", "nova type", "nova write"]):
         typing_mode = True
         return jsonify({
@@ -713,7 +602,7 @@ def parse_command():
             "speak": f"Typed: {text}"
         })
 
-    # ── Shortcut Keys ──
+    # Shortcut Keys
     if command.startswith("press ") or "shortcut" in command or " plus " in command:
         keys = parse_shortcut_from_command(command)
         if keys:
@@ -727,7 +616,7 @@ def parse_command():
             except Exception as e:
                 return jsonify({"error": str(e), "speak": "Could not execute that shortcut."}), 500
 
-    # ── Volume ──
+    # Volume
     percent = parse_percent(command)
     if any(w in command for w in ["increase volume", "volume up", "louder"]):
         return control_volume_action("increase", percent)
@@ -743,7 +632,7 @@ def parse_command():
         pyautogui.press("volumemute")
         return jsonify({"status": "Unmuted", "speak": "Audio unmuted."})
 
-    # ── Shutdown ──
+    # Shutdown
     elif "shutdown" in command or "shut down" in command:
         threading.Thread(
             target=lambda: (time.sleep(2), os.system("shutdown /s /t 10")),
@@ -769,7 +658,7 @@ def parse_command():
             "speak": "Restarting your PC in 10 seconds."
         })
 
-    # ── Mouse ──
+    # Mouse
     elif any(w in command for w in ["move mouse", "center mouse"]):
         w, h = pyautogui.size()
         pyautogui.moveTo(w // 2, h // 2, duration=0.3)
@@ -790,7 +679,7 @@ def parse_command():
         pyautogui.click()
         return jsonify({"status": "Clicked", "speak": "Mouse clicked."})
 
-    # ── Alarm ──
+    # Alarm
     elif "set alarm" in command or "alarm for" in command:
         words = command.split()
         for word in words:
@@ -810,7 +699,6 @@ def parse_command():
             "speak": "Please say the time in H H colon M M format."
         })
 
-    # ── Not a system command ──
     return jsonify({"status": "not_a_command"})
 
 
