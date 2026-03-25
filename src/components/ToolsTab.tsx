@@ -57,7 +57,7 @@ export function ToolsTab() {
 
       const systemPrompt = `You are NOVA. You have access to these tools:\n${toolDescriptions}\n\nIf the user asks something a tool can help with, respond with: TOOL:tool_name:{"param":"value"}\nOtherwise respond normally.`;
 
-      const res = await fetch('http://localhost:5000/api/chat', {
+      const res = await fetch('http://localhost:5001/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +98,7 @@ export function ToolsTab() {
             setTrace([...steps]);
 
             // Send result back to get final response
-            const finalRes = await fetch('http://localhost:5000/api/chat', {
+            const finalRes = await fetch('http://localhost:5001/api/chat', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

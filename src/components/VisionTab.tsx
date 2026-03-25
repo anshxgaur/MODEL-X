@@ -78,7 +78,7 @@ export function VisionTab() {
       const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
       // Send to NOVA backend
-      const res = await fetch('http://localhost:5000/api/vision', {
+      const res = await fetch('http://localhost:5001/api/vision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image, prompt }),

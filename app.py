@@ -243,6 +243,7 @@ KEY_MAP = {
 # MEMORY SYSTEM
 # ─────────────────────────────────────────
 # ...existing code...
+MEMORY_FILE = Path("memories.json")
 CONVERSATIONS_FILE = Path("conversations.json")
 
 def load_memories():
@@ -1182,4 +1183,4 @@ if __name__ == '__main__':
     print(f"🦙 Ollama status: {'online' if is_ollama_running() else 'offline'}")
     print(f"🧠 Model: {OLLAMA_MODEL}")
     print(f"💾 Cache: {len(load_cache())} entries loaded")
-    app.run(port=5000, debug=True)
+    app.run(port=5001, debug=True)

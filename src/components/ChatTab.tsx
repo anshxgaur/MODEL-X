@@ -34,7 +34,7 @@ export function ChatTab() {
 
     try {
       // ── STEP 1: Check for System/OS Commands ──
-      const commandRes = await fetch('http://localhost:5000/api/command', {
+      const commandRes = await fetch('http://localhost:5001/api/command', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: text }),
@@ -62,7 +62,7 @@ export function ChatTab() {
       const assistantMsg: Message = { id: assistantId, role: 'assistant', text: '' };
       setMessages(prev => [...prev, assistantMsg]);
 
-      const chatRes = await fetch('http://localhost:5000/api/chat', {
+      const chatRes = await fetch('http://localhost:5001/api/chat', {
         method: 'POST',
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
