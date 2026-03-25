@@ -9,17 +9,22 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          // We use path.resolve to find the EXACT folder on your hard drive
-          src: path.resolve(__dirname, 'node_modules/@runanywhere/web-llamacpp/dist/wasm/*').replace(/\\/g, '/'),
+          src: path.resolve(__dirname, 'node_modules/@runanywhere/web-llamacpp/wasm/*').replace(/\\/g, '/'),
           dest: 'wasm'
         }
       ]
     })
   ],
+  optimizeDeps: {
+    exclude: ['@runanywhere/web', '@runanywhere/web-llamacpp'],
+  },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'credentialless',
     },
-  }
+    fs: {
+      allow: ['..'],
+    },
+  },
 });

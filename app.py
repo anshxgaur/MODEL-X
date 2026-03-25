@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, Response, stream_with_context
+import requests
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
@@ -235,15 +236,13 @@ KEY_MAP = {
     "f7": Key.f7, "f8": Key.f8, "f9": Key.f9,
     "f10": Key.f10, "f11": Key.f11, "f12": Key.f12,
     "page up": Key.page_up, "page down": Key.page_down,
-    "caps lock": Key.caps_lock, "print screen": Key.print_screen,
-    "insert": Key.insert, "num lock": Key.num_lock,
+    #"caps lock": Key.caps_lock, "print screen": Key.print_screen,
+    # "insert": Key.insert, "num lock": Key.num_lock,  # Removed: not available in pynput.keyboard.Key
 }
-
 # ─────────────────────────────────────────
 # MEMORY SYSTEM
 # ─────────────────────────────────────────
-
-MEMORY_FILE = Path("memories.json")
+# ...existing code...
 CONVERSATIONS_FILE = Path("conversations.json")
 
 def load_memories():
@@ -620,70 +619,18 @@ def handle_chat():
     data = request.json
     messages = data.get("messages", [])
 
-    memories = load_memories()
-    memory_context = ""
-    if memories:
-        memory_context = "\n\nUser memories (use these to personalize your responses):\n"
-        memory_context += "\n".join([f"- {m['text']}" for m in memories])
-    
-    # Add conversation history context
-    conversations = load_conversations()
-    conversation_context = ""
-    if conversations:
-        last_conv = conversations[-1]
-        first_conv = conversations[0]
-        conversation_context = f"\n\nConversation History Info:\n"
-        conversation_context += f"- First conversation: {first_conv['date']} at {first_conv['time']}\n"
-        conversation_context += f"- Last conversation: {last_conv['date']} at {last_conv['time']}\n"
-        conversation_context += f"- Total conversations: {len(conversations)}\n"
-        
-        # Add recent conversation times (last 5)
-        recent = conversations[-5:]
-        conversation_context += f"- Recent conversation times:\n"
-        for conv in recent:
-            conversation_context += f"  • {conv['date']} at {conv['time']}\n"
-    
-    # Add stats context
-    stats = compute_quick_stats()
-    stats_context = f"\n\nUser Stats:\n"
-    stats_context += f"- Today's chats: {stats['today_count']}\n"
-    stats_context += f"- Current streak: {stats['streak_days']} days\n"
-    if stats['badge']:
-        stats_context += f"- Achievement: {stats['badge']}\n"
+    def handle_chat():
+        data = request.json
+        messages = data.get("messages", [])
 
-    full_response = ""
-    user_message = messages[-1]["content"] if messages else ""
+        # Compose user prompt for cache key
+        user_prompt = messages[-1]["content"] if messages else ""
+        full_messages = messages
 
-    if client is None:
-        return jsonify({"status": "Groq API key not configured", "speak": "AI conversation is unavailable because GROQ_API_KEY is not set."}), 503
-
-    def generate():
-        nonlocal full_response
-        stream = client.chat.completions.create(  # type: ignore
-            model="llama-3.3-70b-versatile",
-            max_tokens=1024,
-            stream=True,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT + memory_context + conversation_context + stats_context},
-                *messages
-            ]
+        return Response(
+            stream_with_context(smart_stream(full_messages, user_prompt)),
+            mimetype='text/plain'
         )
-        for chunk in stream:
-            delta = chunk.choices[0].delta.content
-            if delta:
-                full_response += delta
-                yield delta
-        
-        if user_message and full_response:
-            log_conversation(user_message, full_response)
-
-    return Response(
-        stream_with_context(smart_stream(full_messages, user_prompt)),
-        mimetype='text/plain'
-    )
-
-@app.route('/health', methods=['GET'])
-def health():
     return jsonify({"status": "NOVA backend online ⚡"})
 
 # helper: force media key play/pause toggle in local OS

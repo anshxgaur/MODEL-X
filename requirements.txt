@@ -1,0 +1,18 @@
+# requirements.txt for MODEL-X (macOS)
+
+# Core web backend
+flask
+flask-cors
+dotenv
+groq
+requests
+
+# Optional: Spotify support (uncomment if needed)
+# spotipy
+
+# Optional: For media key/keyboard/mouse control
+pynput
+pyautogui
+
+# Note: Pycaw and comtypes are Windows-only and are NOT included here.
+# If you need audio control on macOS, consider using 'osascript' or other macOS-specific tools.
