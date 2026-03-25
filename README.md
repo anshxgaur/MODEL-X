@@ -15,6 +15,19 @@
 
 ---
 
+## 🛠️ Tech Stack
+
+<div align="center">
+
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask)
+![Groq](https://img.shields.io/badge/Groq-LPU-orange?style=for-the-badge)
+
+</div>
+
+---
+
 ## 📊 Performance Snapshot
 
 <div align="center">
