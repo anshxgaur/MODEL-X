@@ -12,7 +12,7 @@
 > Checking AI Security Protocols...........[ ENCRYPTED ]
 > STATUS: 2028-READY | ARCHITECTURE: AGENTIC-NODE-X
 --------------------------------------------------
-      ___           ___           ___           ___     
+>    ___           ___           ___           ___     
      /__/\         /  /\         /  /\         /  /\    
     |  |::\       /  /::\       /  /::\       /  /:/_   
     |  |:|:\     /  /:/\:\     /  /:/\:\     /  /:/ /\  
@@ -25,6 +25,7 @@
      \__\/         \__\/         \__\/         \__\/    
 --------------------------------------------------
 [ACCESS GRANTED: WELCOME TO THE FUTURE OF CSE]
+
 ---
 
 ## 🎬 Project Preview
