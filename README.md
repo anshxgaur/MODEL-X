@@ -82,7 +82,6 @@ sequenceDiagram
     end
     O-->>U: Final 2028-Spec Response
 ```
-![sonic-sonic-the-hedgehog](https://github.com/user-attachments/assets/f128d6ae-0f6c-402b-9599-2ab7c9cbe22d)
 
 ## 👥 The Architects
 
