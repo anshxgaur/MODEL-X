@@ -1,11 +1,6 @@
 ![](Bottom_up.svg)
 <div align="center">
 
-<div>
-  <img src="https://github.com/user-attachments/assets/754f7f48-57b4-4b8f-9054-b21ef7803698" width="300px" align="right" alt="A professional animation coder gif"/>
-</div>
-
-
 ### *The 2028-Ready AI Architecture & Security Framework*
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github)](https://github.com/anshxgaur/MODEL-X/tree/ankit_contri)
@@ -26,6 +21,11 @@
 
 ## 🚀 The Vision: Next-Gen AI
 As the tech landscape accelerates toward 2028, legacy AI models are vulnerable and inefficient. **MODEL-X** is engineered to bridge the gap between high-performance ML architecture and impenetrable AI security. It autonomously sanitizes inputs and optimizes neural inference right at the edge.
+
+<div>
+  <img src="https://github.com/user-attachments/assets/754f7f48-57b4-4b8f-9054-b21ef7803698" width="300px" align="right" alt="A professional animation coder gif"/>
+</div>
+
 
 ### 🔥 Key Innovations
 * **Autonomous Red Teaming:** A self-healing architecture that patches prompt injection vulnerabilities and isolates threats in real-time.
