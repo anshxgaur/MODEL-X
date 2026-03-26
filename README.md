@@ -1,7 +1,9 @@
 ![](Bottom_up.svg)
 <div align="center">
   
-### *The 2028-Ready AI Architecture & Security Framework*
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=700&size=50&duration=3000&pause=1000&color=00BFFF&center=true&vCenter=true&width=1000&lines=Hi,+there!+I'm+NOVA;Your+Personal+A.I.+Assistant" alt="Typing SVG">
+</p>
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github)](https://github.com/anshxgaur/MODEL-X/tree/ankit_contri)
 [![Domain](https://img.shields.io/badge/Domain-AI%20Security%20%7C%20ML%20Architecture-red?style=for-the-badge&logo=shield)](https://github.com/anshxgaur/MODEL-X/tree/ankit_contri)
