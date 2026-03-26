@@ -3,6 +3,37 @@
   <img src="https://github.com/user-attachments/assets/754f7f48-57b4-4b8f-9054-b21ef7803698" width="300px" align="right" alt="A professional animation coder gif"/>
 </div>
 
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/yourusername/yourrepo/raw/main/dark-bg.jpg">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/yourusername/yourrepo/raw/main/light-bg.jpg">
+  <img alt="futuristic background" src="https://your-image-url-or-base64.jpg">
+</picture>
+
+# <span style="background: linear-gradient(90deg, #00f2fe, #ff00ff, #00ff88, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 300% 300%; animation: gradient-shift 3s ease infinite;">AnshGaur</span>
+<br><span style="color: #00ff88; font-size: 1.2em; font-weight: bold;">Ultra-Fast LPU Inference</span>
+
+<br><br>
+
+[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Grok LPU](https://img.shields.io/badge/Grok%20LPU-00FF88?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiMwMEZGODgiLz4KPHRleHQgeD0iMjAiIHk9IjI1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIj5HUm9rPC90ZXh0Pgo8L3N2Zz4=)](https://groq.com)
+[![Llama 3.7](https://img.shields.io/badge/LLama%203.7-FF6B35?style=for-the-badge&logo=llama&logoColor=white)](https://llama.meta.com/)
+
+<br>
+
+[![Status](https://img.shields.io/badge/Status-ACTIVE%20DEVELOPMENT-00FF88?style=for-the-badge&logo=rocket&logoColor=black)](https://github.com/yourusername/yourrepo)
+
+<style>
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+</style>
+
+</div>
+
 <p align="center">
   <b>Ansh Gaur</b><br>
   <i>A futuristic AI assistant powered by Groq's ultra-fast LPU inference</i>
