@@ -79,6 +79,11 @@ Future Integration:
 
 ---
 
+<img src="assets/monitoring.gif" align="right" width="300" />
+
+<br/>
+
+
 ## ⚡ Performance Optimization
 
 - Quantized models for faster inference  
