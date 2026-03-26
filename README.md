@@ -134,3 +134,32 @@ sequenceDiagram
 - **Real-Time Responsiveness** → Sub-200ms pipeline target  
 
 ---
+
+---
+
+## 🔄 End-to-End Pipeline Breakdown
+
+### Step 1: Voice Capture
+User input is captured via microphone in real-time.
+
+### Step 2: Speech-to-Text
+Audio is converted into structured text using local STT.
+
+### Step 3: Security Gateway
+- Input sanitization  
+- Prompt injection detection  
+- Threat classification  
+
+### Step 4: Orchestration Layer
+- Query decomposition  
+- Task routing  
+- Context handling  
+
+### Step 5: LLM Processing
+- Context-aware reasoning  
+- Response generation  
+
+### Step 6: Text-to-Speech
+Final response converted to natural speech output.
+
+---
