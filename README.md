@@ -16,7 +16,7 @@
 
 <hr />
 
-![](header_ (1).png)
+![](header_(1).png)
 
 ## 🚀 The Vision: Next-Gen AI
 As the tech landscape accelerates toward 2028, legacy AI models are vulnerable and inefficient. **MODEL-X** is engineered to bridge the gap between high-performance ML architecture and impenetrable AI security. It autonomously sanitizes inputs and optimizes neural inference right at the edge.
