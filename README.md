@@ -87,6 +87,7 @@ Future Integration:
 - Lightweight local models  
 - Caching frequent responses  
 
+---
 
 
 ## 🚀 The Vision: Next-Gen AI
