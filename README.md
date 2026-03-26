@@ -78,9 +78,6 @@ Future Integration:
 - Centralized logging pipeline  
 
 ---
-<div>
-  <img src="assets/monitoring.gif" width="300px" align="right" alt="Monitoring gif"/>
-</div>
 
 ## ⚡ Performance Optimization
 
