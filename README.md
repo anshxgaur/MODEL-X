@@ -122,3 +122,15 @@ sequenceDiagram
 | Poor real-time performance                  | Optimized streaming + async execution            |
 
 ---
+
+---
+
+## ⚙️ Design Principles
+
+- **Zero Trust Architecture** → No input is trusted by default  
+- **Edge-First Processing** → Compute happens locally  
+- **Modular Intelligence** → Multiple specialized components  
+- **Security Before Inference** → AI is never exposed directly  
+- **Real-Time Responsiveness** → Sub-200ms pipeline target  
+
+---
