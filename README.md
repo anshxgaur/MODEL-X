@@ -27,7 +27,6 @@
 | Monolithic AI systems                       | Modular orchestration architecture               |
 | Poor real-time performance                  | Optimized streaming + async execution            |
 
----
 
 ## ⚙️ Design Principles
 
@@ -37,7 +36,7 @@
 - **Security Before Inference** → AI is never exposed directly  
 - **Real-Time Responsiveness** → Sub-200ms pipeline target  
 
----
+
 
 ## 🔄 End-to-End Pipeline Breakdown
 
@@ -64,7 +63,6 @@ Audio is converted into structured text using local STT.
 ### Step 6: Text-to-Speech
 Final response converted to natural speech output.
 
----
 
 ## 📊 Observability & Monitoring
 
@@ -77,7 +75,6 @@ Future Integration:
 - Prometheus + Grafana dashboards  
 - Centralized logging pipeline  
 
----
 
 ## ⚡ Performance Optimization
 
