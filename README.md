@@ -16,7 +16,7 @@
 
 <hr />
 
-![](header_(1).png)
+![](header.png)
 <a href="https://www.python.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" align="right" height="52" width="52"></a>
 
 
