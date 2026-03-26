@@ -48,6 +48,18 @@
 
 ---
 
+<br/>
+
+![gifgithub](https://github.com/user-attachments/assets/54dc1f7a-f327-43ab-ae9c-58c7421eee39)
+
+<br/>
+
+<a href="https://github.com/CelaDaniel" target="_blank">
+  <img align="right" src="https://img.icons8.com/material-outlined/24/ffffff/github.png" alt="GitHub Icon">
+</a>
+
+
+
 ## ⚡ What is NOVA?
 
 NOVA is a sleek, futuristic AI assistant interface built with React + TypeScript, powered by **Groq's LPU (Language Processing Unit)** for lightning-fast responses. It features a stunning cyber-aesthetic UI with a glowing orb, real-time system log, and a smart auto-expanding input.
@@ -177,14 +189,4 @@ MIT
 <p align="center">Made with ❤️ by <b>Ansh Gaur</b></p>
 ```
 
-
-<br/>
-
-![gifgithub](https://github.com/user-attachments/assets/54dc1f7a-f327-43ab-ae9c-58c7421eee39)
-
-<br/>
-
-<a href="https://github.com/CelaDaniel" target="_blank">
-  <img align="right" src="https://img.icons8.com/material-outlined/24/ffffff/github.png" alt="GitHub Icon">
-</a>
 
