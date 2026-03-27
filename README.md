@@ -167,7 +167,7 @@ sequenceDiagram
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Aarush%20Srivastava%20-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/srivastavaaarush/) 
 
 <div align="center">
-<sub>Built with ❤️ at [HackXtreme]</sub>
+<sub>Built with ❤️ for [HackXtreme]</sub>
 </div>
 
 <br/>
