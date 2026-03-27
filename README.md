@@ -216,6 +216,12 @@ sequenceDiagram
   <img align="right" src="https://img.icons8.com/material-outlined/24/ffffff/github.png" alt="GitHub Icon">
 </a>
 
+## 🏁 Conclusion
+
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=700&size=50&duration=3000&pause=1000&color=00BFFF&center=true&vCenter=true&width=1000&lines=Engineered+as+a+System;Not+a+Model" alt="Typing SVG">
+
+
 <summary><b>⚙️ How to Run NOVA</b></summary>
 
 ```bash
@@ -244,8 +250,4 @@ python app.py
 <details>
 
 
-## 🏁 Conclusion
-
-<p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=700&size=50&duration=3000&pause=1000&color=00BFFF&center=true&vCenter=true&width=1000&lines=Engineered+as+a+System;Not+a+Model" alt="Typing SVG">
 
