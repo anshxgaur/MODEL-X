@@ -65,6 +65,42 @@ Final response converted to natural speech output.
 
 ---
 
+## Healthcare Data Intelligence System
+
+An end-to-end AI framework designed to analyze complex medical datasets, predict disease outbreaks, and optimize hospital resource allocation.
+
+### 🏥 Key Features
+
+- **Disease Prediction:** Heart Disease & Diabetes risk modeling  
+- **Interactive Dashboard:** Real-time patient vitals via Streamlit  
+- **Risk Stratification:** Categorizing patients by urgency  
+
+</td>
+
+<td valign="top">
+
+---
+
+## Intelligent Voice Assistant
+
+A desktop automation companion that listens, understands, and acts. Control your system volume, brightness, and web interactions strictly through voice.
+
+### 🎙️ Key Features
+
+- **System Control:** Voice-activated Volume & Brightness  
+- **Web Automation:** Google Search & YouTube playback  
+- **Hands-Free:** Mouse control & voice typing  
+
+</td>
+</tr>
+
+<tr>
+<td valign="top">
+
+
+
+---
+
 ## 📊 Observability & Monitoring
 
 - 📈 Real-time latency tracking  
