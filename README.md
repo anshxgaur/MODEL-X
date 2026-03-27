@@ -245,8 +245,6 @@ pip install -r requirements.txt
 python app.py
 ```
 
----
-
 ## 🏁 Conclusion
 
 <p align="center">
