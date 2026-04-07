@@ -63,6 +63,39 @@ Audio is converted into structured text using local STT.
 ### Step 6: Text-to-Speech
 Final response converted to natural speech output.
 
+```mermaid
+flowchart TD
+
+    A[🎤 Voice Input] --> B[Step 1: Voice Capture]
+    B --> C[Step 2: Speech-to-Text]
+
+    C --> D[Step 3: Security Gateway]
+
+    D --> D1[Input Sanitization]
+    D --> D2[Prompt Injection Detection]
+    D --> D3[Threat Classification]
+
+    D1 --> E[Step 4: Orchestration Layer]
+    D2 --> E
+    D3 --> E
+
+    E --> E1[Query Decomposition]
+    E --> E2[Task Routing]
+    E --> E3[Context Handling]
+
+    E1 --> F[Step 5: LLM Processing]
+    E2 --> F
+    E3 --> F
+
+    F --> F1[Context-Aware Reasoning]
+    F --> F2[Response Generation]
+
+    F1 --> G[Step 6: Text-to-Speech]
+    F2 --> G
+
+    G --> H[🔊 Audio Output to User]
+```
+
 ---
 
 ## Healthcare Data Intelligence System
